@@ -3,22 +3,57 @@ import { concat, arrayify, hexlify } from '@ethersproject/bytes';
 import { BcsDeserializer, BcsSerializer } from '../bcs';
 import { Serializer } from '../serde/serializer';
 import { Deserializer } from '../serde/deserializer';
-import { Optional, Seq, Tuple, ListTuple, unit, bool, int8, int16, int32, int64, int128, uint8, uint16, uint32, uint64, uint128, float32, float64, char, str, bytes } from '../serde/types';
-import { dec2bin, bin2dec, setBit, isSetBit, dec2uint8array, uint8array2dec } from "../../../utils/helper";
+import {
+  Optional,
+  Seq,
+  Tuple,
+  ListTuple,
+  unit,
+  bool,
+  int8,
+  int16,
+  int32,
+  int64,
+  int128,
+  uint8,
+  uint16,
+  uint32,
+  uint64,
+  uint128,
+  float32,
+  float64,
+  char,
+  str,
+  bytes,
+} from '../serde/types';
+import {
+  dec2bin,
+  bin2dec,
+  setBit,
+  isSetBit,
+  dec2uint8array,
+  uint8array2dec,
+} from '../../../utils/helper';
 
 const CryptoMaterialError = {
   SerializationError: 'Struct to be signed does not serialize correctly',
-  DeserializationError: 'Key or signature material does not deserialize correctly',
-  ValidationError: 'Key or signature material deserializes, but is otherwise not valid',
-  WrongLengthError: 'Key, threshold or signature material does not have the expected size',
-  CanonicalRepresentationError: 'Part of the signature or key is not canonical resulting to malleability issues',
-  SmallSubgroupError: 'A curve point (i.e., a public key) lies on a small group',
-  PointNotOnCurveError: 'A curve point (i.e., a public key) does not satisfy the curve equation',
+  DeserializationError:
+    'Key or signature material does not deserialize correctly',
+  ValidationError:
+    'Key or signature material deserializes, but is otherwise not valid',
+  WrongLengthError:
+    'Key, threshold or signature material does not have the expected size',
+  CanonicalRepresentationError:
+    'Part of the signature or key is not canonical resulting to malleability issues',
+  SmallSubgroupError:
+    'A curve point (i.e., a public key) lies on a small group',
+  PointNotOnCurveError:
+    'A curve point (i.e., a public key) does not satisfy the curve equation',
   BitVecError: 'BitVec errors in accountable multi-sig schemes',
-}
+};
 
-const MAX_NUM_OF_KEYS = 32
-const BITMAP_NUM_OF_BYTES = 4
+const MAX_NUM_OF_KEYS = 32;
+const BITMAP_NUM_OF_BYTES = 4;
 
 // The length of the Ed25519PrivateKey
 const ED25519_PRIVATE_KEY_LENGTH = 32;
@@ -28,9 +63,7 @@ const ED25519_PUBLIC_KEY_LENGTH = 32;
 const ED25519_SIGNATURE_LENGTH = 32;
 
 export class AccessPath {
-
-  constructor(public field0: AccountAddress, public field1: DataPath) {
-  }
+  constructor(public field0: AccountAddress, public field1: DataPath) {}
 
   public serialize(serializer: Serializer): void {
     this.field0.serialize(serializer);
@@ -42,13 +75,11 @@ export class AccessPath {
     const field1 = DataPath.deserialize(deserializer);
     return new AccessPath(field0, field1);
   }
-
 }
 export class AccountAddress {
   static LENGTH: uint8 = 16;
 
-  constructor(public value: ListTuple<[uint8]>) {
-  }
+  constructor(public value: ListTuple<[uint8]>) {}
 
   public serialize(serializer: Serializer): void {
     Helpers.serializeArray16U8Array(this.value, serializer);
@@ -58,17 +89,28 @@ export class AccountAddress {
     const value = Helpers.deserializeArray16U8Array(deserializer);
     return new AccountAddress(value);
   }
-
 }
 export class AccountResource {
-
-  constructor(public authentication_key: Seq<uint8>, public withdrawal_capability: Optional<WithdrawCapabilityResource>, public key_rotation_capability: Optional<KeyRotationCapabilityResource>, public withdraw_events: EventHandle, public deposit_events: EventHandle, public accept_token_events: EventHandle, public sequence_number: uint64) {
-  }
+  constructor(
+    public authentication_key: Seq<uint8>,
+    public withdrawal_capability: Optional<WithdrawCapabilityResource>,
+    public key_rotation_capability: Optional<KeyRotationCapabilityResource>,
+    public withdraw_events: EventHandle,
+    public deposit_events: EventHandle,
+    public accept_token_events: EventHandle,
+    public sequence_number: uint64
+  ) {}
 
   public serialize(serializer: Serializer): void {
     Helpers.serializeVectorU8(this.authentication_key, serializer);
-    Helpers.serializeOptionWithdrawCapabilityResource(this.withdrawal_capability, serializer);
-    Helpers.serializeOptionKeyRotationCapabilityResource(this.key_rotation_capability, serializer);
+    Helpers.serializeOptionWithdrawCapabilityResource(
+      this.withdrawal_capability,
+      serializer
+    );
+    Helpers.serializeOptionKeyRotationCapabilityResource(
+      this.key_rotation_capability,
+      serializer
+    );
     this.withdraw_events.serialize(serializer);
     this.deposit_events.serialize(serializer);
     this.accept_token_events.serialize(serializer);
@@ -77,20 +119,29 @@ export class AccountResource {
 
   static deserialize(deserializer: Deserializer): AccountResource {
     const authentication_key = Helpers.deserializeVectorU8(deserializer);
-    const withdrawal_capability = Helpers.deserializeOptionWithdrawCapabilityResource(deserializer);
-    const key_rotation_capability = Helpers.deserializeOptionKeyRotationCapabilityResource(deserializer);
+    const withdrawal_capability = Helpers.deserializeOptionWithdrawCapabilityResource(
+      deserializer
+    );
+    const key_rotation_capability = Helpers.deserializeOptionKeyRotationCapabilityResource(
+      deserializer
+    );
     const withdraw_events = EventHandle.deserialize(deserializer);
     const deposit_events = EventHandle.deserialize(deserializer);
     const accept_token_events = EventHandle.deserialize(deserializer);
     const sequence_number = deserializer.deserializeU64();
-    return new AccountResource(authentication_key, withdrawal_capability, key_rotation_capability, withdraw_events, deposit_events, accept_token_events, sequence_number);
+    return new AccountResource(
+      authentication_key,
+      withdrawal_capability,
+      key_rotation_capability,
+      withdraw_events,
+      deposit_events,
+      accept_token_events,
+      sequence_number
+    );
   }
-
 }
 export class ArgumentABI {
-
-  constructor(public name: str, public type_tag: TypeTag) {
-  }
+  constructor(public name: str, public type_tag: TypeTag) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeStr(this.name);
@@ -102,12 +153,9 @@ export class ArgumentABI {
     const type_tag = TypeTag.deserialize(deserializer);
     return new ArgumentABI(name, type_tag);
   }
-
 }
 export class AuthenticationKey {
-
-  constructor(public value: bytes) {
-  }
+  constructor(public value: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.value);
@@ -117,12 +165,18 @@ export class AuthenticationKey {
     const value = deserializer.deserializeBytes();
     return new AuthenticationKey(value);
   }
-
 }
 export class BlockMetadata {
-
-  constructor(public parent_hash: HashValue, public timestamp: uint64, public author: AccountAddress, public author_auth_key: Optional<AuthenticationKey>, public uncles: uint64, public number: uint64, public chain_id: ChainId, public parent_gas_used: uint64) {
-  }
+  constructor(
+    public parent_hash: HashValue,
+    public timestamp: uint64,
+    public author: AccountAddress,
+    public author_auth_key: Optional<AuthenticationKey>,
+    public uncles: uint64,
+    public number: uint64,
+    public chain_id: ChainId,
+    public parent_gas_used: uint64
+  ) {}
 
   public serialize(serializer: Serializer): void {
     this.parent_hash.serialize(serializer);
@@ -139,19 +193,27 @@ export class BlockMetadata {
     const parent_hash = HashValue.deserialize(deserializer);
     const timestamp = deserializer.deserializeU64();
     const author = AccountAddress.deserialize(deserializer);
-    const author_auth_key = Helpers.deserializeOptionAuthenticationKey(deserializer);
+    const author_auth_key = Helpers.deserializeOptionAuthenticationKey(
+      deserializer
+    );
     const uncles = deserializer.deserializeU64();
     const number = deserializer.deserializeU64();
     const chain_id = ChainId.deserialize(deserializer);
     const parent_gas_used = deserializer.deserializeU64();
-    return new BlockMetadata(parent_hash, timestamp, author, author_auth_key, uncles, number, chain_id, parent_gas_used);
+    return new BlockMetadata(
+      parent_hash,
+      timestamp,
+      author,
+      author_auth_key,
+      uncles,
+      number,
+      chain_id,
+      parent_gas_used
+    );
   }
-
 }
 export class ChainId {
-
-  constructor(public id: uint8) {
-  }
+  constructor(public id: uint8) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeU8(this.id);
@@ -161,7 +223,6 @@ export class ChainId {
     const id = deserializer.deserializeU8();
     return new ChainId(id);
   }
-
 }
 export abstract class ContractEvent {
   abstract serialize(serializer: Serializer): void;
@@ -169,15 +230,15 @@ export abstract class ContractEvent {
   static deserialize(deserializer: Deserializer): ContractEvent {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return ContractEventVariantV0.load(deserializer);
-      default: throw new Error("Unknown variant index for ContractEvent: " + index);
+      case 0:
+        return ContractEventVariantV0.load(deserializer);
+      default:
+        throw new Error('Unknown variant index for ContractEvent: ' + index);
     }
   }
 }
 
-
 export class ContractEventVariantV0 extends ContractEvent {
-
   constructor(public value: ContractEventV0) {
     super();
   }
@@ -191,12 +252,14 @@ export class ContractEventVariantV0 extends ContractEvent {
     const value = ContractEventV0.deserialize(deserializer);
     return new ContractEventVariantV0(value);
   }
-
 }
 export class ContractEventV0 {
-
-  constructor(public key: EventKey, public sequence_number: uint64, public type_tag: TypeTag, public event_data: bytes) {
-  }
+  constructor(
+    public key: EventKey,
+    public sequence_number: uint64,
+    public type_tag: TypeTag,
+    public event_data: bytes
+  ) {}
 
   public serialize(serializer: Serializer): void {
     this.key.serialize(serializer);
@@ -212,7 +275,6 @@ export class ContractEventV0 {
     const event_data = deserializer.deserializeBytes();
     return new ContractEventV0(key, sequence_number, type_tag, event_data);
   }
-
 }
 export abstract class DataPath {
   abstract serialize(serializer: Serializer): void;
@@ -220,16 +282,17 @@ export abstract class DataPath {
   static deserialize(deserializer: Deserializer): DataPath {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return DataPathVariantCode.load(deserializer);
-      case 1: return DataPathVariantResource.load(deserializer);
-      default: throw new Error("Unknown variant index for DataPath: " + index);
+      case 0:
+        return DataPathVariantCode.load(deserializer);
+      case 1:
+        return DataPathVariantResource.load(deserializer);
+      default:
+        throw new Error('Unknown variant index for DataPath: ' + index);
     }
   }
 }
 
-
 export class DataPathVariantCode extends DataPath {
-
   constructor(public value: Identifier) {
     super();
   }
@@ -243,11 +306,9 @@ export class DataPathVariantCode extends DataPath {
     const value = Identifier.deserialize(deserializer);
     return new DataPathVariantCode(value);
   }
-
 }
 
 export class DataPathVariantResource extends DataPath {
-
   constructor(public value: StructTag) {
     super();
   }
@@ -261,7 +322,6 @@ export class DataPathVariantResource extends DataPath {
     const value = StructTag.deserialize(deserializer);
     return new DataPathVariantResource(value);
   }
-
 }
 export abstract class DataType {
   abstract serialize(serializer: Serializer): void;
@@ -269,13 +329,15 @@ export abstract class DataType {
   static deserialize(deserializer: Deserializer): DataType {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return DataTypeVariantCODE.load(deserializer);
-      case 1: return DataTypeVariantRESOURCE.load(deserializer);
-      default: throw new Error("Unknown variant index for DataType: " + index);
+      case 0:
+        return DataTypeVariantCODE.load(deserializer);
+      case 1:
+        return DataTypeVariantRESOURCE.load(deserializer);
+      default:
+        throw new Error('Unknown variant index for DataType: ' + index);
     }
   }
 }
-
 
 export class DataTypeVariantCODE extends DataType {
   constructor() {
@@ -289,7 +351,6 @@ export class DataTypeVariantCODE extends DataType {
   static load(deserializer: Deserializer): DataTypeVariantCODE {
     return new DataTypeVariantCODE();
   }
-
 }
 
 export class DataTypeVariantRESOURCE extends DataType {
@@ -304,12 +365,9 @@ export class DataTypeVariantRESOURCE extends DataType {
   static load(deserializer: Deserializer): DataTypeVariantRESOURCE {
     return new DataTypeVariantRESOURCE();
   }
-
 }
 export class Ed25519PrivateKey {
-
-  constructor(public value: bytes) {
-  }
+  constructor(public value: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.value);
@@ -319,12 +377,9 @@ export class Ed25519PrivateKey {
     const value = deserializer.deserializeBytes();
     return new Ed25519PrivateKey(value);
   }
-
 }
 export class Ed25519PublicKey {
-
-  constructor(public value: bytes) {
-  }
+  constructor(public value: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.value);
@@ -334,12 +389,9 @@ export class Ed25519PublicKey {
     const value = deserializer.deserializeBytes();
     return new Ed25519PublicKey(value);
   }
-
 }
 export class Ed25519Signature {
-
-  constructor(public value: bytes) {
-  }
+  constructor(public value: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.value);
@@ -349,12 +401,9 @@ export class Ed25519Signature {
     const value = deserializer.deserializeBytes();
     return new Ed25519Signature(value);
   }
-
 }
 export class EventHandle {
-
-  constructor(public count: uint64, public key: EventKey) {
-  }
+  constructor(public count: uint64, public key: EventKey) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeU64(this.count);
@@ -366,12 +415,9 @@ export class EventHandle {
     const key = EventKey.deserialize(deserializer);
     return new EventHandle(count, key);
   }
-
 }
 export class EventKey {
-
-  constructor(public value: bytes) {
-  }
+  constructor(public value: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.value);
@@ -381,12 +427,9 @@ export class EventKey {
     const value = deserializer.deserializeBytes();
     return new EventKey(value);
   }
-
 }
 export class HashValue {
-
-  constructor(public value: bytes) {
-  }
+  constructor(public value: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.value);
@@ -396,12 +439,9 @@ export class HashValue {
     const value = deserializer.deserializeBytes();
     return new HashValue(value);
   }
-
 }
 export class Identifier {
-
-  constructor(public value: str) {
-  }
+  constructor(public value: str) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeStr(this.value);
@@ -411,27 +451,23 @@ export class Identifier {
     const value = deserializer.deserializeStr();
     return new Identifier(value);
   }
-
 }
 export class KeyRotationCapabilityResource {
-
-  constructor(public account_address: AccountAddress) {
-  }
+  constructor(public account_address: AccountAddress) {}
 
   public serialize(serializer: Serializer): void {
     this.account_address.serialize(serializer);
   }
 
-  static deserialize(deserializer: Deserializer): KeyRotationCapabilityResource {
+  static deserialize(
+    deserializer: Deserializer
+  ): KeyRotationCapabilityResource {
     const account_address = AccountAddress.deserialize(deserializer);
     return new KeyRotationCapabilityResource(account_address);
   }
-
 }
 export class Module {
-
-  constructor(public code: bytes) {
-  }
+  constructor(public code: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.code);
@@ -441,12 +477,9 @@ export class Module {
     const code = deserializer.deserializeBytes();
     return new Module(code);
   }
-
 }
 export class ModuleId {
-
-  constructor(public address: AccountAddress, public name: Identifier) {
-  }
+  constructor(public address: AccountAddress, public name: Identifier) {}
 
   public serialize(serializer: Serializer): void {
     this.address.serialize(serializer);
@@ -458,12 +491,9 @@ export class ModuleId {
     const name = Identifier.deserialize(deserializer);
     return new ModuleId(address, name);
   }
-
 }
 export class MultiEd25519PrivateKey {
-
-  constructor(public value: bytes) {
-  }
+  constructor(public value: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.value);
@@ -473,15 +503,17 @@ export class MultiEd25519PrivateKey {
     const value = deserializer.deserializeBytes();
     return new MultiEd25519PrivateKey(value);
   }
-
 }
 export class MultiEd25519PublicKey {
-  constructor(public public_keys: Seq<Ed25519PublicKey>, public threshold: uint8) {
+  constructor(
+    public public_keys: Seq<Ed25519PublicKey>,
+    public threshold: uint8
+  ) {
     const num_of_public_keys = public_keys.length;
     if (threshold === 0 || num_of_public_keys < threshold) {
-      throw new Error(CryptoMaterialError.ValidationError)
+      throw new Error(CryptoMaterialError.ValidationError);
     } else if (num_of_public_keys > MAX_NUM_OF_KEYS) {
-      throw new Error(CryptoMaterialError.WrongLengthError)
+      throw new Error(CryptoMaterialError.WrongLengthError);
     }
   }
 
@@ -490,58 +522,63 @@ export class MultiEd25519PublicKey {
   }
 
   static deserialize(deserializer: Deserializer): MultiEd25519PublicKey {
-    const bytes = deserializer.deserializeBytes()
+    const bytes = deserializer.deserializeBytes();
     const public_keys: Seq<Ed25519PublicKey> = [];
-    const count = (bytes.length - 1) / 32
+    const count = (bytes.length - 1) / 32;
     for (let i = 0; i < count; i++) {
       const start = i * 32;
       const end = start + 32;
       public_keys.push(new Ed25519PublicKey(bytes.slice(start, end)));
     }
-    const threshold = new DataView(bytes.slice(-1).buffer, 0).getUint8(0);;
+    const threshold = new DataView(bytes.slice(-1).buffer, 0).getUint8(0);
     return new MultiEd25519PublicKey(public_keys, threshold);
   }
 
   public value(): Uint8Array {
-    const arrPub = []
+    const arrPub = [];
     this.public_keys.forEach((pub) => {
-      arrPub.push(pub.value)
-    })
+      arrPub.push(pub.value);
+    });
 
     const arrThreshold = new Uint8Array(1);
-    arrThreshold[0] = this.threshold
+    arrThreshold[0] = this.threshold;
 
-    const bytes = concat([...arrPub, ...arrThreshold])
+    const bytes = concat([...arrPub, ...arrThreshold]);
     return bytes;
   }
 }
 
 export class MultiEd25519Signature {
   // 0b00010000000000000000000000000001(268435457), the 3rd and 31st positions are set.
-  constructor(public signatures: Seq<Ed25519Signature>, public bitmap: uint8) {
-  }
+  constructor(public signatures: Seq<Ed25519Signature>, public bitmap: uint8) {}
 
-  static build(origin_signatures: [Ed25519Signature, uint8][]): MultiEd25519Signature {
+  static build(
+    origin_signatures: [Ed25519Signature, uint8][]
+  ): MultiEd25519Signature {
     const num_of_sigs = origin_signatures.length;
     if (num_of_sigs === 0 || num_of_sigs > MAX_NUM_OF_KEYS) {
-      throw new Error(CryptoMaterialError.ValidationError)
+      throw new Error(CryptoMaterialError.ValidationError);
     }
     const sorted_signatures = origin_signatures.sort((a, b) => {
-      return a[1] > b[1] ? 1 : -1
-    })
-    const sigs = []
-    let bitmap = 0b00000000000000000000000000000000
+      return a[1] > b[1] ? 1 : -1;
+    });
+    const sigs = [];
+    let bitmap = 0b00000000000000000000000000000000;
     sorted_signatures.forEach((k, v) => {
-      console.log(k, v)
+      console.log(k, v);
       if (k[1] >= MAX_NUM_OF_KEYS) {
-        throw new Error(`${ CryptoMaterialError.BitVecError }: Signature index is out of range`)
+        throw new Error(
+          `${CryptoMaterialError.BitVecError}: Signature index is out of range`
+        );
       } else if (isSetBit(bitmap, k[1])) {
-        throw new Error(`${ CryptoMaterialError.BitVecError }: Duplicate signature index`)
+        throw new Error(
+          `${CryptoMaterialError.BitVecError}: Duplicate signature index`
+        );
       } else {
-        sigs.push(k[0])
-        bitmap = setBit(bitmap, k[1])
+        sigs.push(k[0]);
+        bitmap = setBit(bitmap, k[1]);
       }
-    })
+    });
     return new MultiEd25519Signature(sigs, bitmap);
   }
 
@@ -550,9 +587,9 @@ export class MultiEd25519Signature {
   }
 
   static deserialize(deserializer: Deserializer): MultiEd25519Signature {
-    const bytes = deserializer.deserializeBytes()
+    const bytes = deserializer.deserializeBytes();
     const signatures: Seq<Ed25519Signature> = [];
-    const count = (bytes.length - 4) / 64
+    const count = (bytes.length - 4) / 64;
     for (let i = 0; i < count; i++) {
       const start = i * 64;
       const end = start + 64;
@@ -563,82 +600,99 @@ export class MultiEd25519Signature {
   }
 
   public value(): Uint8Array {
-    const arrSignatures = []
+    const arrSignatures = [];
     this.signatures.forEach((signature) => {
-      arrSignatures.push(signature.value)
-    })
+      arrSignatures.push(signature.value);
+    });
 
     const arrBitmap = dec2uint8array(this.bitmap);
 
-    const bytes = concat([...arrSignatures, ...arrBitmap])
+    const bytes = concat([...arrSignatures, ...arrBitmap]);
     return bytes;
   }
 }
 
 export class MultiEd25519SignatureShard {
-  constructor(public signature: MultiEd25519Signature, public threshold: uint8) {
-  }
+  constructor(
+    public signature: MultiEd25519Signature,
+    public threshold: uint8
+  ) {}
 
   public signatures(): [Ed25519Signature, uint8][] {
     const signatures = this.signature.signatures;
     const bitmap = this.signature.bitmap;
-    const result: [Ed25519Signature, uint8][] = []
-    let bitmap_index = 0
+    const result: [Ed25519Signature, uint8][] = [];
+    let bitmap_index = 0;
     signatures.forEach((v, idx) => {
       while (!isSetBit(bitmap, bitmap_index)) {
         bitmap_index += 1;
       }
-      result.push([v, bitmap_index])
-      bitmap_index += 1
-    })
-    return result
+      result.push([v, bitmap_index]);
+      bitmap_index += 1;
+    });
+    return result;
   }
 
-  static merge(shards: Seq<MultiEd25519SignatureShard>): MultiEd25519SignatureShard {
+  static merge(
+    shards: Seq<MultiEd25519SignatureShard>
+  ): MultiEd25519SignatureShard {
     if (shards.length === 0) {
-      throw new Error('MultiEd25519SignatureShard shards is empty')
+      throw new Error('MultiEd25519SignatureShard shards is empty');
     }
-    const threshold = shards[0].threshold
-    const signatures: [Ed25519Signature, uint8][] = []
+    const threshold = shards[0].threshold;
+    const signatures: [Ed25519Signature, uint8][] = [];
     shards.forEach((shard) => {
       if (shard.threshold !== threshold) {
-        throw new Error('MultiEd25519SignatureShard shards threshold not same')
+        throw new Error('MultiEd25519SignatureShard shards threshold not same');
       }
-      signatures.push(...shard.signatures())
-    })
-    return new MultiEd25519SignatureShard(MultiEd25519Signature.build(signatures), threshold)
-
+      signatures.push(...shard.signatures());
+    });
+    return new MultiEd25519SignatureShard(
+      MultiEd25519Signature.build(signatures),
+      threshold
+    );
   }
 
   public is_enough(): boolean {
-    return this.signature.signatures.length >= this.threshold
+    return this.signature.signatures.length >= this.threshold;
   }
 }
 
 // Part of private keys in the multi-key Ed25519 structure along with the threshold.
 // note: the private keys must be a sequential part of the MultiEd25519PrivateKey
 export class MultiEd25519KeyShard {
-  constructor(public public_keys: Seq<Ed25519PublicKey>, public threshold: uint8, public private_keys: Record<uint8, Ed25519PrivateKey>) {
+  constructor(
+    public public_keys: Seq<Ed25519PublicKey>,
+    public threshold: uint8,
+    public private_keys: Record<uint8, Ed25519PrivateKey>
+  ) {
     const num_of_public_keys = public_keys.length;
     const num_of_private_keys = Object.keys(private_keys).length;
-    if (threshold === 0 || num_of_private_keys === 0 || num_of_public_keys < threshold) {
-      throw new Error(CryptoMaterialError.ValidationError)
-    } else if (num_of_private_keys > MAX_NUM_OF_KEYS || num_of_public_keys > MAX_NUM_OF_KEYS) {
-      throw new Error(CryptoMaterialError.WrongLengthError)
+    if (
+      threshold === 0 ||
+      num_of_private_keys === 0 ||
+      num_of_public_keys < threshold
+    ) {
+      throw new Error(CryptoMaterialError.ValidationError);
+    } else if (
+      num_of_private_keys > MAX_NUM_OF_KEYS ||
+      num_of_public_keys > MAX_NUM_OF_KEYS
+    ) {
+      throw new Error(CryptoMaterialError.WrongLengthError);
     }
   }
 
   public serialize(serializer: Serializer): void {
-    serializer.serializeU8(this.public_keys.length)
-    serializer.serializeU8(this.threshold)
-    serializer.serializeU8(this.len())
+    serializer.serializeU8(this.public_keys.length);
+    serializer.serializeU8(this.threshold);
+    serializer.serializeU8(this.len());
     this.public_keys.forEach((pub) => {
-      pub.serialize(serializer)
-    })
+      pub.serialize(serializer);
+    });
     Object.keys(this.private_keys).forEach((pos) => {
-      serializer.serializeU8(Number.parseInt(pos, 10))
-      this.private_keys[pos].serialize(serializer)
-    })
+      serializer.serializeU8(Number.parseInt(pos, 10));
+      this.private_keys[pos].serialize(serializer);
+    });
   }
 
   static deserialize(deserializer: Deserializer): MultiEd25519KeyShard {
@@ -651,9 +705,9 @@ export class MultiEd25519KeyShard {
     }
     const private_keys: Record<uint8, Ed25519PrivateKey> = [];
     for (let i = 0; i < privateKeysLen; i++) {
-      const pos = deserializer.deserializeU8()
-      const privateKey = Ed25519PrivateKey.deserialize(deserializer)
-      public_keys[pos] = privateKey
+      const pos = deserializer.deserializeU8();
+      const privateKey = Ed25519PrivateKey.deserialize(deserializer);
+      public_keys[pos] = privateKey;
     }
     return new MultiEd25519KeyShard(public_keys, threshold, private_keys);
   }
@@ -670,18 +724,18 @@ export class MultiEd25519KeyShard {
   // should be different for each account, since the private_keys are not the same
   public privateKey(): Uint8Array {
     const arrHead = new Uint8Array(3);
-    arrHead[0] = this.public_keys.length
-    arrHead[1] = this.threshold
-    arrHead[2] = this.len()
-    const arrPub = []
+    arrHead[0] = this.public_keys.length;
+    arrHead[1] = this.threshold;
+    arrHead[2] = this.len();
+    const arrPub = [];
     this.public_keys.forEach((pub) => {
-      arrPub.push(pub.value)
-    })
-    const arrPriv = []
+      arrPub.push(pub.value);
+    });
+    const arrPriv = [];
     Object.values(this.private_keys).forEach((priv) => {
-      arrPriv.push(priv.value)
-    })
-    const bytes = concat([arrHead, ...arrPub, ...arrPriv])
+      arrPriv.push(priv.value);
+    });
+    const bytes = concat([arrHead, ...arrPub, ...arrPriv]);
     return bytes;
   }
 
@@ -695,9 +749,11 @@ export class MultiEd25519KeyShard {
 }
 
 export class Package {
-
-  constructor(public package_address: AccountAddress, public modules: Seq<Module>, public init_script: Optional<ScriptFunction>) {
-  }
+  constructor(
+    public package_address: AccountAddress,
+    public modules: Seq<Module>,
+    public init_script: Optional<ScriptFunction>
+  ) {}
 
   public serialize(serializer: Serializer): void {
     this.package_address.serialize(serializer);
@@ -711,12 +767,18 @@ export class Package {
     const init_script = Helpers.deserializeOptionScriptFunction(deserializer);
     return new Package(package_address, modules, init_script);
   }
-
 }
 export class RawUserTransaction {
-
-  constructor(public sender: AccountAddress, public sequence_number: uint64, public payload: TransactionPayload, public max_gas_amount: uint64, public gas_unit_price: uint64, public gas_token_code: str, public expiration_timestamp_secs: uint64, public chain_id: ChainId) {
-  }
+  constructor(
+    public sender: AccountAddress,
+    public sequence_number: uint64,
+    public payload: TransactionPayload,
+    public max_gas_amount: uint64,
+    public gas_unit_price: uint64,
+    public gas_token_code: str,
+    public expiration_timestamp_secs: uint64,
+    public chain_id: ChainId
+  ) {}
 
   public serialize(serializer: Serializer): void {
     this.sender.serialize(serializer);
@@ -738,13 +800,24 @@ export class RawUserTransaction {
     const gas_token_code = deserializer.deserializeStr();
     const expiration_timestamp_secs = deserializer.deserializeU64();
     const chain_id = ChainId.deserialize(deserializer);
-    return new RawUserTransaction(sender, sequence_number, payload, max_gas_amount, gas_unit_price, gas_token_code, expiration_timestamp_secs, chain_id);
+    return new RawUserTransaction(
+      sender,
+      sequence_number,
+      payload,
+      max_gas_amount,
+      gas_unit_price,
+      gas_token_code,
+      expiration_timestamp_secs,
+      chain_id
+    );
   }
 }
 export class Script {
-
-  constructor(public code: bytes, public ty_args: Seq<TypeTag>, public args: Seq<bytes>) {
-  }
+  constructor(
+    public code: bytes,
+    public ty_args: Seq<TypeTag>,
+    public args: Seq<bytes>
+  ) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.code);
@@ -758,7 +831,6 @@ export class Script {
     const args = Helpers.deserializeVectorBytes(deserializer);
     return new Script(code, ty_args, args);
   }
-
 }
 export abstract class ScriptABI {
   abstract serialize(serializer: Serializer): void;
@@ -766,16 +838,17 @@ export abstract class ScriptABI {
   static deserialize(deserializer: Deserializer): ScriptABI {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return ScriptABIVariantTransactionScript.load(deserializer);
-      case 1: return ScriptABIVariantScriptFunction.load(deserializer);
-      default: throw new Error("Unknown variant index for ScriptABI: " + index);
+      case 0:
+        return ScriptABIVariantTransactionScript.load(deserializer);
+      case 1:
+        return ScriptABIVariantScriptFunction.load(deserializer);
+      default:
+        throw new Error('Unknown variant index for ScriptABI: ' + index);
     }
   }
 }
 
-
 export class ScriptABIVariantTransactionScript extends ScriptABI {
-
   constructor(public value: TransactionScriptABI) {
     super();
   }
@@ -789,11 +862,9 @@ export class ScriptABIVariantTransactionScript extends ScriptABI {
     const value = TransactionScriptABI.deserialize(deserializer);
     return new ScriptABIVariantTransactionScript(value);
   }
-
 }
 
 export class ScriptABIVariantScriptFunction extends ScriptABI {
-
   constructor(public value: ScriptFunctionABI) {
     super();
   }
@@ -807,12 +878,15 @@ export class ScriptABIVariantScriptFunction extends ScriptABI {
     const value = ScriptFunctionABI.deserialize(deserializer);
     return new ScriptABIVariantScriptFunction(value);
   }
-
 }
 export class ScriptFunction {
   // need to rename `function` to `func` as `function` is a keyword in JS.
-  constructor(public module: ModuleId, public func: Identifier, public ty_args: Seq<TypeTag>, public args: Seq<bytes>) {
-  }
+  constructor(
+    public module: ModuleId,
+    public func: Identifier,
+    public ty_args: Seq<TypeTag>,
+    public args: Seq<bytes>
+  ) {}
 
   public serialize(serializer: Serializer): void {
     this.module.serialize(serializer);
@@ -828,12 +902,15 @@ export class ScriptFunction {
     const args = Helpers.deserializeVectorBytes(deserializer);
     return new ScriptFunction(module, func, ty_args, args);
   }
-
 }
 export class ScriptFunctionABI {
-
-  constructor(public name: str, public module_name: ModuleId, public doc: str, public ty_args: Seq<TypeArgumentABI>, public args: Seq<ArgumentABI>) {
-  }
+  constructor(
+    public name: str,
+    public module_name: ModuleId,
+    public doc: str,
+    public ty_args: Seq<TypeArgumentABI>,
+    public args: Seq<ArgumentABI>
+  ) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeStr(this.name);
@@ -851,12 +928,12 @@ export class ScriptFunctionABI {
     const args = Helpers.deserializeVectorArgumentAbi(deserializer);
     return new ScriptFunctionABI(name, module_name, doc, ty_args, args);
   }
-
 }
 export class SignedUserTransaction {
-
-  constructor(public raw_txn: RawUserTransaction, public authenticator: TransactionAuthenticator) {
-  }
+  constructor(
+    public raw_txn: RawUserTransaction,
+    public authenticator: TransactionAuthenticator
+  ) {}
 
   public serialize(serializer: Serializer): void {
     this.raw_txn.serialize(serializer);
@@ -869,21 +946,37 @@ export class SignedUserTransaction {
     return new SignedUserTransaction(raw_txn, authenticator);
   }
 
-  static ed25519(raw_txn: RawUserTransaction, public_key: Ed25519PublicKey, signature: Ed25519Signature): SignedUserTransaction {
-    const authenticator = new TransactionAuthenticatorVariantEd25519(public_key, signature);
+  static ed25519(
+    raw_txn: RawUserTransaction,
+    public_key: Ed25519PublicKey,
+    signature: Ed25519Signature
+  ): SignedUserTransaction {
+    const authenticator = new TransactionAuthenticatorVariantEd25519(
+      public_key,
+      signature
+    );
     return new SignedUserTransaction(raw_txn, authenticator);
   }
 
-  static multi_ed25519(raw_txn: RawUserTransaction, public_key: MultiEd25519PublicKey, signature: MultiEd25519Signature): SignedUserTransaction {
-    const authenticator = new TransactionAuthenticatorVariantMultiEd25519(public_key, signature);
+  static multi_ed25519(
+    raw_txn: RawUserTransaction,
+    public_key: MultiEd25519PublicKey,
+    signature: MultiEd25519Signature
+  ): SignedUserTransaction {
+    const authenticator = new TransactionAuthenticatorVariantMultiEd25519(
+      public_key,
+      signature
+    );
     return new SignedUserTransaction(raw_txn, authenticator);
   }
-
 }
 export class StructTag {
-
-  constructor(public address: AccountAddress, public module: Identifier, public name: Identifier, public type_params: Seq<TypeTag>) {
-  }
+  constructor(
+    public address: AccountAddress,
+    public module: Identifier,
+    public name: Identifier,
+    public type_params: Seq<TypeTag>
+  ) {}
 
   public serialize(serializer: Serializer): void {
     this.address.serialize(serializer);
@@ -899,7 +992,6 @@ export class StructTag {
     const type_params = Helpers.deserializeVectorTypeTag(deserializer);
     return new StructTag(address, module, name, type_params);
   }
-
 }
 export abstract class Transaction {
   abstract serialize(serializer: Serializer): void;
@@ -907,16 +999,17 @@ export abstract class Transaction {
   static deserialize(deserializer: Deserializer): Transaction {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return TransactionVariantUserTransaction.load(deserializer);
-      case 1: return TransactionVariantBlockMetadata.load(deserializer);
-      default: throw new Error("Unknown variant index for Transaction: " + index);
+      case 0:
+        return TransactionVariantUserTransaction.load(deserializer);
+      case 1:
+        return TransactionVariantBlockMetadata.load(deserializer);
+      default:
+        throw new Error('Unknown variant index for Transaction: ' + index);
     }
   }
 }
 
-
 export class TransactionVariantUserTransaction extends Transaction {
-
   constructor(public value: SignedUserTransaction) {
     super();
   }
@@ -930,11 +1023,9 @@ export class TransactionVariantUserTransaction extends Transaction {
     const value = SignedUserTransaction.deserialize(deserializer);
     return new TransactionVariantUserTransaction(value);
   }
-
 }
 
 export class TransactionVariantBlockMetadata extends Transaction {
-
   constructor(public value: BlockMetadata) {
     super();
   }
@@ -948,7 +1039,6 @@ export class TransactionVariantBlockMetadata extends Transaction {
     const value = BlockMetadata.deserialize(deserializer);
     return new TransactionVariantBlockMetadata(value);
   }
-
 }
 export abstract class TransactionArgument {
   abstract serialize(serializer: Serializer): void;
@@ -956,20 +1046,27 @@ export abstract class TransactionArgument {
   static deserialize(deserializer: Deserializer): TransactionArgument {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return TransactionArgumentVariantU8.load(deserializer);
-      case 1: return TransactionArgumentVariantU64.load(deserializer);
-      case 2: return TransactionArgumentVariantU128.load(deserializer);
-      case 3: return TransactionArgumentVariantAddress.load(deserializer);
-      case 4: return TransactionArgumentVariantU8Vector.load(deserializer);
-      case 5: return TransactionArgumentVariantBool.load(deserializer);
-      default: throw new Error("Unknown variant index for TransactionArgument: " + index);
+      case 0:
+        return TransactionArgumentVariantU8.load(deserializer);
+      case 1:
+        return TransactionArgumentVariantU64.load(deserializer);
+      case 2:
+        return TransactionArgumentVariantU128.load(deserializer);
+      case 3:
+        return TransactionArgumentVariantAddress.load(deserializer);
+      case 4:
+        return TransactionArgumentVariantU8Vector.load(deserializer);
+      case 5:
+        return TransactionArgumentVariantBool.load(deserializer);
+      default:
+        throw new Error(
+          'Unknown variant index for TransactionArgument: ' + index
+        );
     }
   }
 }
 
-
 export class TransactionArgumentVariantU8 extends TransactionArgument {
-
   constructor(public value: uint8) {
     super();
   }
@@ -983,11 +1080,9 @@ export class TransactionArgumentVariantU8 extends TransactionArgument {
     const value = deserializer.deserializeU8();
     return new TransactionArgumentVariantU8(value);
   }
-
 }
 
 export class TransactionArgumentVariantU64 extends TransactionArgument {
-
   constructor(public value: uint64) {
     super();
   }
@@ -1001,11 +1096,9 @@ export class TransactionArgumentVariantU64 extends TransactionArgument {
     const value = deserializer.deserializeU64();
     return new TransactionArgumentVariantU64(value);
   }
-
 }
 
 export class TransactionArgumentVariantU128 extends TransactionArgument {
-
   constructor(public value: uint128) {
     super();
   }
@@ -1019,11 +1112,9 @@ export class TransactionArgumentVariantU128 extends TransactionArgument {
     const value = deserializer.deserializeU128();
     return new TransactionArgumentVariantU128(value);
   }
-
 }
 
 export class TransactionArgumentVariantAddress extends TransactionArgument {
-
   constructor(public value: AccountAddress) {
     super();
   }
@@ -1037,11 +1128,9 @@ export class TransactionArgumentVariantAddress extends TransactionArgument {
     const value = AccountAddress.deserialize(deserializer);
     return new TransactionArgumentVariantAddress(value);
   }
-
 }
 
 export class TransactionArgumentVariantU8Vector extends TransactionArgument {
-
   constructor(public value: bytes) {
     super();
   }
@@ -1055,11 +1144,9 @@ export class TransactionArgumentVariantU8Vector extends TransactionArgument {
     const value = deserializer.deserializeBytes();
     return new TransactionArgumentVariantU8Vector(value);
   }
-
 }
 
 export class TransactionArgumentVariantBool extends TransactionArgument {
-
   constructor(public value: bool) {
     super();
   }
@@ -1073,7 +1160,6 @@ export class TransactionArgumentVariantBool extends TransactionArgument {
     const value = deserializer.deserializeBool();
     return new TransactionArgumentVariantBool(value);
   }
-
 }
 export abstract class TransactionAuthenticator {
   abstract serialize(serializer: Serializer): void;
@@ -1081,17 +1167,23 @@ export abstract class TransactionAuthenticator {
   static deserialize(deserializer: Deserializer): TransactionAuthenticator {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return TransactionAuthenticatorVariantEd25519.load(deserializer);
-      case 1: return TransactionAuthenticatorVariantMultiEd25519.load(deserializer);
-      default: throw new Error("Unknown variant index for TransactionAuthenticator: " + index);
+      case 0:
+        return TransactionAuthenticatorVariantEd25519.load(deserializer);
+      case 1:
+        return TransactionAuthenticatorVariantMultiEd25519.load(deserializer);
+      default:
+        throw new Error(
+          'Unknown variant index for TransactionAuthenticator: ' + index
+        );
     }
   }
 }
 
-
 export class TransactionAuthenticatorVariantEd25519 extends TransactionAuthenticator {
-
-  constructor(public public_key: Ed25519PublicKey, public signature: Ed25519Signature) {
+  constructor(
+    public public_key: Ed25519PublicKey,
+    public signature: Ed25519Signature
+  ) {
     super();
   }
 
@@ -1101,17 +1193,20 @@ export class TransactionAuthenticatorVariantEd25519 extends TransactionAuthentic
     this.signature.serialize(serializer);
   }
 
-  static load(deserializer: Deserializer): TransactionAuthenticatorVariantEd25519 {
+  static load(
+    deserializer: Deserializer
+  ): TransactionAuthenticatorVariantEd25519 {
     const public_key = Ed25519PublicKey.deserialize(deserializer);
     const signature = Ed25519Signature.deserialize(deserializer);
     return new TransactionAuthenticatorVariantEd25519(public_key, signature);
   }
-
 }
 
 export class TransactionAuthenticatorVariantMultiEd25519 extends TransactionAuthenticator {
-
-  constructor(public public_key: MultiEd25519PublicKey, public signature: MultiEd25519Signature) {
+  constructor(
+    public public_key: MultiEd25519PublicKey,
+    public signature: MultiEd25519Signature
+  ) {
     super();
   }
 
@@ -1121,12 +1216,16 @@ export class TransactionAuthenticatorVariantMultiEd25519 extends TransactionAuth
     this.signature.serialize(serializer);
   }
 
-  static load(deserializer: Deserializer): TransactionAuthenticatorVariantMultiEd25519 {
+  static load(
+    deserializer: Deserializer
+  ): TransactionAuthenticatorVariantMultiEd25519 {
     const public_key = MultiEd25519PublicKey.deserialize(deserializer);
     const signature = MultiEd25519Signature.deserialize(deserializer);
-    return new TransactionAuthenticatorVariantMultiEd25519(public_key, signature);
+    return new TransactionAuthenticatorVariantMultiEd25519(
+      public_key,
+      signature
+    );
   }
-
 }
 export abstract class TransactionPayload {
   abstract serialize(serializer: Serializer): void;
@@ -1134,17 +1233,21 @@ export abstract class TransactionPayload {
   static deserialize(deserializer: Deserializer): TransactionPayload {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return TransactionPayloadVariantScript.load(deserializer);
-      case 1: return TransactionPayloadVariantPackage.load(deserializer);
-      case 2: return TransactionPayloadVariantScriptFunction.load(deserializer);
-      default: throw new Error("Unknown variant index for TransactionPayload: " + index);
+      case 0:
+        return TransactionPayloadVariantScript.load(deserializer);
+      case 1:
+        return TransactionPayloadVariantPackage.load(deserializer);
+      case 2:
+        return TransactionPayloadVariantScriptFunction.load(deserializer);
+      default:
+        throw new Error(
+          'Unknown variant index for TransactionPayload: ' + index
+        );
     }
   }
 }
 
-
 export class TransactionPayloadVariantScript extends TransactionPayload {
-
   constructor(public value: Script) {
     super();
   }
@@ -1158,11 +1261,9 @@ export class TransactionPayloadVariantScript extends TransactionPayload {
     const value = Script.deserialize(deserializer);
     return new TransactionPayloadVariantScript(value);
   }
-
 }
 
 export class TransactionPayloadVariantPackage extends TransactionPayload {
-
   constructor(public value: Package) {
     super();
   }
@@ -1176,11 +1277,9 @@ export class TransactionPayloadVariantPackage extends TransactionPayload {
     const value = Package.deserialize(deserializer);
     return new TransactionPayloadVariantPackage(value);
   }
-
 }
 
 export class TransactionPayloadVariantScriptFunction extends TransactionPayload {
-
   constructor(public value: ScriptFunction) {
     super();
   }
@@ -1190,16 +1289,21 @@ export class TransactionPayloadVariantScriptFunction extends TransactionPayload 
     this.value.serialize(serializer);
   }
 
-  static load(deserializer: Deserializer): TransactionPayloadVariantScriptFunction {
+  static load(
+    deserializer: Deserializer
+  ): TransactionPayloadVariantScriptFunction {
     const value = ScriptFunction.deserialize(deserializer);
     return new TransactionPayloadVariantScriptFunction(value);
   }
-
 }
 export class TransactionScriptABI {
-
-  constructor(public name: str, public doc: str, public code: bytes, public ty_args: Seq<TypeArgumentABI>, public args: Seq<ArgumentABI>) {
-  }
+  constructor(
+    public name: str,
+    public doc: str,
+    public code: bytes,
+    public ty_args: Seq<TypeArgumentABI>,
+    public args: Seq<ArgumentABI>
+  ) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeStr(this.name);
@@ -1217,12 +1321,9 @@ export class TransactionScriptABI {
     const args = Helpers.deserializeVectorArgumentAbi(deserializer);
     return new TransactionScriptABI(name, doc, code, ty_args, args);
   }
-
 }
 export class TypeArgumentABI {
-
-  constructor(public name: str) {
-  }
+  constructor(public name: str) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeStr(this.name);
@@ -1232,7 +1333,6 @@ export class TypeArgumentABI {
     const name = deserializer.deserializeStr();
     return new TypeArgumentABI(name);
   }
-
 }
 export abstract class TypeTag {
   abstract serialize(serializer: Serializer): void;
@@ -1240,19 +1340,27 @@ export abstract class TypeTag {
   static deserialize(deserializer: Deserializer): TypeTag {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return TypeTagVariantBool.load(deserializer);
-      case 1: return TypeTagVariantU8.load(deserializer);
-      case 2: return TypeTagVariantU64.load(deserializer);
-      case 3: return TypeTagVariantU128.load(deserializer);
-      case 4: return TypeTagVariantAddress.load(deserializer);
-      case 5: return TypeTagVariantSigner.load(deserializer);
-      case 6: return TypeTagVariantVector.load(deserializer);
-      case 7: return TypeTagVariantStruct.load(deserializer);
-      default: throw new Error("Unknown variant index for TypeTag: " + index);
+      case 0:
+        return TypeTagVariantBool.load(deserializer);
+      case 1:
+        return TypeTagVariantU8.load(deserializer);
+      case 2:
+        return TypeTagVariantU64.load(deserializer);
+      case 3:
+        return TypeTagVariantU128.load(deserializer);
+      case 4:
+        return TypeTagVariantAddress.load(deserializer);
+      case 5:
+        return TypeTagVariantSigner.load(deserializer);
+      case 6:
+        return TypeTagVariantVector.load(deserializer);
+      case 7:
+        return TypeTagVariantStruct.load(deserializer);
+      default:
+        throw new Error('Unknown variant index for TypeTag: ' + index);
     }
   }
 }
-
 
 export class TypeTagVariantBool extends TypeTag {
   constructor() {
@@ -1266,7 +1374,6 @@ export class TypeTagVariantBool extends TypeTag {
   static load(deserializer: Deserializer): TypeTagVariantBool {
     return new TypeTagVariantBool();
   }
-
 }
 
 export class TypeTagVariantU8 extends TypeTag {
@@ -1281,7 +1388,6 @@ export class TypeTagVariantU8 extends TypeTag {
   static load(deserializer: Deserializer): TypeTagVariantU8 {
     return new TypeTagVariantU8();
   }
-
 }
 
 export class TypeTagVariantU64 extends TypeTag {
@@ -1296,7 +1402,6 @@ export class TypeTagVariantU64 extends TypeTag {
   static load(deserializer: Deserializer): TypeTagVariantU64 {
     return new TypeTagVariantU64();
   }
-
 }
 
 export class TypeTagVariantU128 extends TypeTag {
@@ -1311,7 +1416,6 @@ export class TypeTagVariantU128 extends TypeTag {
   static load(deserializer: Deserializer): TypeTagVariantU128 {
     return new TypeTagVariantU128();
   }
-
 }
 
 export class TypeTagVariantAddress extends TypeTag {
@@ -1326,7 +1430,6 @@ export class TypeTagVariantAddress extends TypeTag {
   static load(deserializer: Deserializer): TypeTagVariantAddress {
     return new TypeTagVariantAddress();
   }
-
 }
 
 export class TypeTagVariantSigner extends TypeTag {
@@ -1341,11 +1444,9 @@ export class TypeTagVariantSigner extends TypeTag {
   static load(deserializer: Deserializer): TypeTagVariantSigner {
     return new TypeTagVariantSigner();
   }
-
 }
 
 export class TypeTagVariantVector extends TypeTag {
-
   constructor(public value: TypeTag) {
     super();
   }
@@ -1359,11 +1460,9 @@ export class TypeTagVariantVector extends TypeTag {
     const value = TypeTag.deserialize(deserializer);
     return new TypeTagVariantVector(value);
   }
-
 }
 
 export class TypeTagVariantStruct extends TypeTag {
-
   constructor(public value: StructTag) {
     super();
   }
@@ -1377,12 +1476,9 @@ export class TypeTagVariantStruct extends TypeTag {
     const value = StructTag.deserialize(deserializer);
     return new TypeTagVariantStruct(value);
   }
-
 }
 export class WithdrawCapabilityResource {
-
-  constructor(public account_address: AccountAddress) {
-  }
+  constructor(public account_address: AccountAddress) {}
 
   public serialize(serializer: Serializer): void {
     this.account_address.serialize(serializer);
@@ -1392,7 +1488,6 @@ export class WithdrawCapabilityResource {
     const account_address = AccountAddress.deserialize(deserializer);
     return new WithdrawCapabilityResource(account_address);
   }
-
 }
 export abstract class WriteOp {
   abstract serialize(serializer: Serializer): void;
@@ -1400,13 +1495,15 @@ export abstract class WriteOp {
   static deserialize(deserializer: Deserializer): WriteOp {
     const index = deserializer.deserializeVariantIndex();
     switch (index) {
-      case 0: return WriteOpVariantDeletion.load(deserializer);
-      case 1: return WriteOpVariantValue.load(deserializer);
-      default: throw new Error("Unknown variant index for WriteOp: " + index);
+      case 0:
+        return WriteOpVariantDeletion.load(deserializer);
+      case 1:
+        return WriteOpVariantValue.load(deserializer);
+      default:
+        throw new Error('Unknown variant index for WriteOp: ' + index);
     }
   }
 }
-
 
 export class WriteOpVariantDeletion extends WriteOp {
   constructor() {
@@ -1420,11 +1517,9 @@ export class WriteOpVariantDeletion extends WriteOp {
   static load(deserializer: Deserializer): WriteOpVariantDeletion {
     return new WriteOpVariantDeletion();
   }
-
 }
 
 export class WriteOpVariantValue extends WriteOp {
-
   constructor(public value: bytes) {
     super();
   }
@@ -1438,12 +1533,9 @@ export class WriteOpVariantValue extends WriteOp {
     const value = deserializer.deserializeBytes();
     return new WriteOpVariantValue(value);
   }
-
 }
 export class WriteSet {
-
-  constructor(public value: WriteSetMut) {
-  }
+  constructor(public value: WriteSetMut) {}
 
   public serialize(serializer: Serializer): void {
     this.value.serialize(serializer);
@@ -1453,31 +1545,34 @@ export class WriteSet {
     const value = WriteSetMut.deserialize(deserializer);
     return new WriteSet(value);
   }
-
 }
 export class WriteSetMut {
-
-  constructor(public write_set: Seq<Tuple<[AccessPath, WriteOp]>>) {
-  }
+  constructor(public write_set: Seq<Tuple<[AccessPath, WriteOp]>>) {}
 
   public serialize(serializer: Serializer): void {
     Helpers.serializeVectorTuple2AccessPathWriteOp(this.write_set, serializer);
   }
 
   static deserialize(deserializer: Deserializer): WriteSetMut {
-    const write_set = Helpers.deserializeVectorTuple2AccessPathWriteOp(deserializer);
+    const write_set = Helpers.deserializeVectorTuple2AccessPathWriteOp(
+      deserializer
+    );
     return new WriteSetMut(write_set);
   }
-
 }
 export class Helpers {
-  static serializeArray16U8Array(value: ListTuple<[uint8]>, serializer: Serializer): void {
+  static serializeArray16U8Array(
+    value: ListTuple<[uint8]>,
+    serializer: Serializer
+  ): void {
     value.forEach((item) => {
       serializer.serializeU8(item[0]);
     });
   }
 
-  static deserializeArray16U8Array(deserializer: Deserializer): ListTuple<[uint8]> {
+  static deserializeArray16U8Array(
+    deserializer: Deserializer
+  ): ListTuple<[uint8]> {
     const list: ListTuple<[uint8]> = [];
     for (let i = 0; i < 16; i++) {
       list.push([deserializer.deserializeU8()]);
@@ -1485,7 +1580,10 @@ export class Helpers {
     return list;
   }
 
-  static serializeOptionAuthenticationKey(value: Optional<AuthenticationKey>, serializer: Serializer): void {
+  static serializeOptionAuthenticationKey(
+    value: Optional<AuthenticationKey>,
+    serializer: Serializer
+  ): void {
     if (value) {
       serializer.serializeOptionTag(true);
       value.serialize(serializer);
@@ -1494,7 +1592,9 @@ export class Helpers {
     }
   }
 
-  static deserializeOptionAuthenticationKey(deserializer: Deserializer): Optional<AuthenticationKey> {
+  static deserializeOptionAuthenticationKey(
+    deserializer: Deserializer
+  ): Optional<AuthenticationKey> {
     const tag = deserializer.deserializeOptionTag();
     if (!tag) {
       return null;
@@ -1503,7 +1603,10 @@ export class Helpers {
     }
   }
 
-  static serializeOptionKeyRotationCapabilityResource(value: Optional<KeyRotationCapabilityResource>, serializer: Serializer): void {
+  static serializeOptionKeyRotationCapabilityResource(
+    value: Optional<KeyRotationCapabilityResource>,
+    serializer: Serializer
+  ): void {
     if (value) {
       serializer.serializeOptionTag(true);
       value.serialize(serializer);
@@ -1512,7 +1615,9 @@ export class Helpers {
     }
   }
 
-  static deserializeOptionKeyRotationCapabilityResource(deserializer: Deserializer): Optional<KeyRotationCapabilityResource> {
+  static deserializeOptionKeyRotationCapabilityResource(
+    deserializer: Deserializer
+  ): Optional<KeyRotationCapabilityResource> {
     const tag = deserializer.deserializeOptionTag();
     if (!tag) {
       return null;
@@ -1521,7 +1626,10 @@ export class Helpers {
     }
   }
 
-  static serializeOptionScriptFunction(value: Optional<ScriptFunction>, serializer: Serializer): void {
+  static serializeOptionScriptFunction(
+    value: Optional<ScriptFunction>,
+    serializer: Serializer
+  ): void {
     if (value) {
       serializer.serializeOptionTag(true);
       value.serialize(serializer);
@@ -1530,7 +1638,9 @@ export class Helpers {
     }
   }
 
-  static deserializeOptionScriptFunction(deserializer: Deserializer): Optional<ScriptFunction> {
+  static deserializeOptionScriptFunction(
+    deserializer: Deserializer
+  ): Optional<ScriptFunction> {
     const tag = deserializer.deserializeOptionTag();
     if (!tag) {
       return null;
@@ -1539,7 +1649,10 @@ export class Helpers {
     }
   }
 
-  static serializeOptionWithdrawCapabilityResource(value: Optional<WithdrawCapabilityResource>, serializer: Serializer): void {
+  static serializeOptionWithdrawCapabilityResource(
+    value: Optional<WithdrawCapabilityResource>,
+    serializer: Serializer
+  ): void {
     if (value) {
       serializer.serializeOptionTag(true);
       value.serialize(serializer);
@@ -1548,7 +1661,9 @@ export class Helpers {
     }
   }
 
-  static deserializeOptionWithdrawCapabilityResource(deserializer: Deserializer): Optional<WithdrawCapabilityResource> {
+  static deserializeOptionWithdrawCapabilityResource(
+    deserializer: Deserializer
+  ): Optional<WithdrawCapabilityResource> {
     const tag = deserializer.deserializeOptionTag();
     if (!tag) {
       return null;
@@ -1557,26 +1672,36 @@ export class Helpers {
     }
   }
 
-  static serializeTuple2AccessPathWriteOp(value: Tuple<[AccessPath, WriteOp]>, serializer: Serializer): void {
+  static serializeTuple2AccessPathWriteOp(
+    value: Tuple<[AccessPath, WriteOp]>,
+    serializer: Serializer
+  ): void {
     value[0].serialize(serializer);
     value[1].serialize(serializer);
   }
 
-  static deserializeTuple2AccessPathWriteOp(deserializer: Deserializer): Tuple<[AccessPath, WriteOp]> {
+  static deserializeTuple2AccessPathWriteOp(
+    deserializer: Deserializer
+  ): Tuple<[AccessPath, WriteOp]> {
     return [
       AccessPath.deserialize(deserializer),
-      WriteOp.deserialize(deserializer)
+      WriteOp.deserialize(deserializer),
     ];
   }
 
-  static serializeVectorArgumentAbi(value: Seq<ArgumentABI>, serializer: Serializer): void {
+  static serializeVectorArgumentAbi(
+    value: Seq<ArgumentABI>,
+    serializer: Serializer
+  ): void {
     serializer.serializeLen(value.length);
     value.forEach((item: ArgumentABI) => {
       item.serialize(serializer);
     });
   }
 
-  static deserializeVectorArgumentAbi(deserializer: Deserializer): Seq<ArgumentABI> {
+  static deserializeVectorArgumentAbi(
+    deserializer: Deserializer
+  ): Seq<ArgumentABI> {
     const length = deserializer.deserializeLen();
     const list: Seq<ArgumentABI> = [];
     for (let i = 0; i < length; i++) {
@@ -1585,7 +1710,10 @@ export class Helpers {
     return list;
   }
 
-  static serializeVectorModule(value: Seq<Module>, serializer: Serializer): void {
+  static serializeVectorModule(
+    value: Seq<Module>,
+    serializer: Serializer
+  ): void {
     serializer.serializeLen(value.length);
     value.forEach((item: Module) => {
       item.serialize(serializer);
@@ -1601,14 +1729,19 @@ export class Helpers {
     return list;
   }
 
-  static serializeVectorTypeArgumentAbi(value: Seq<TypeArgumentABI>, serializer: Serializer): void {
+  static serializeVectorTypeArgumentAbi(
+    value: Seq<TypeArgumentABI>,
+    serializer: Serializer
+  ): void {
     serializer.serializeLen(value.length);
     value.forEach((item: TypeArgumentABI) => {
       item.serialize(serializer);
     });
   }
 
-  static deserializeVectorTypeArgumentAbi(deserializer: Deserializer): Seq<TypeArgumentABI> {
+  static deserializeVectorTypeArgumentAbi(
+    deserializer: Deserializer
+  ): Seq<TypeArgumentABI> {
     const length = deserializer.deserializeLen();
     const list: Seq<TypeArgumentABI> = [];
     for (let i = 0; i < length; i++) {
@@ -1617,7 +1750,10 @@ export class Helpers {
     return list;
   }
 
-  static serializeVectorTypeTag(value: Seq<TypeTag>, serializer: Serializer): void {
+  static serializeVectorTypeTag(
+    value: Seq<TypeTag>,
+    serializer: Serializer
+  ): void {
     serializer.serializeLen(value.length);
     value.forEach((item: TypeTag) => {
       item.serialize(serializer);
@@ -1649,14 +1785,19 @@ export class Helpers {
     return list;
   }
 
-  static serializeVectorTuple2AccessPathWriteOp(value: Seq<Tuple<[AccessPath, WriteOp]>>, serializer: Serializer): void {
+  static serializeVectorTuple2AccessPathWriteOp(
+    value: Seq<Tuple<[AccessPath, WriteOp]>>,
+    serializer: Serializer
+  ): void {
     serializer.serializeLen(value.length);
     value.forEach((item: Tuple<[AccessPath, WriteOp]>) => {
       Helpers.serializeTuple2AccessPathWriteOp(item, serializer);
     });
   }
 
-  static deserializeVectorTuple2AccessPathWriteOp(deserializer: Deserializer): Seq<Tuple<[AccessPath, WriteOp]>> {
+  static deserializeVectorTuple2AccessPathWriteOp(
+    deserializer: Deserializer
+  ): Seq<Tuple<[AccessPath, WriteOp]>> {
     const length = deserializer.deserializeLen();
     const list: Seq<Tuple<[AccessPath, WriteOp]>> = [];
     for (let i = 0; i < length; i++) {
@@ -1680,70 +1821,71 @@ export class Helpers {
     }
     return list;
   }
-
 }
 
 export class AuthKey {
-
-  constructor(public value: bytes) {
-  }
+  constructor(public value: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.value);
   }
 
   public hex(): string {
-    return Buffer.from(this.value).toString('hex')
+    return Buffer.from(this.value).toString('hex');
   }
-
 }
 /**
  * Receipt Identifier
  * https://github.com/starcoinorg/SIPs/blob/master/sip-21/index.md
- * 
+ *
  */
 export class ReceiptIdentifier {
-  constructor(public accountAddress: AccountAddress, public authKey: Optional<AuthKey>) {
-  }
+  constructor(
+    public accountAddress: AccountAddress,
+    public authKey: Optional<AuthKey>
+  ) {}
 
   public encode(): string {
-    const VERSION = '1'
-    const PREFIX = 'stc'
+    const VERSION = '1';
+    const PREFIX = 'stc';
 
     const se = new BcsSerializer();
     this.accountAddress.serialize(se);
 
-    const dataBuff = Buffer.concat([Buffer.from(se.getBytes()), Buffer.from(this.authKey.value)])
-    const words = bech32.toWords(dataBuff)
-    const wordsPrefixVersion = [Number(VERSION)].concat(words)
-    const encodedStr = bech32.encode(PREFIX, wordsPrefixVersion)
-    return encodedStr
+    const dataBuff = Buffer.concat([
+      Buffer.from(se.getBytes()),
+      Buffer.from(this.authKey.value),
+    ]);
+    const words = bech32.toWords(dataBuff);
+    const wordsPrefixVersion = [Number(VERSION)].concat(words);
+    const encodedStr = bech32.encode(PREFIX, wordsPrefixVersion);
+    return encodedStr;
   }
 
   static decode(value: string): ReceiptIdentifier {
-    const result = bech32.decode(value)
-    const wordsPrefixVersion = result.words
+    const result = bech32.decode(value);
+    const wordsPrefixVersion = result.words;
 
     // const versionBytes = wordsPrefixVersion.slice(0, 1)
     // const version = versionBytes.toString()
 
-    const words = wordsPrefixVersion.slice(1)
+    const words = wordsPrefixVersion.slice(1);
 
-    const dataBytes = Buffer.from(bech32.fromWords(words))
+    const dataBytes = Buffer.from(bech32.fromWords(words));
 
-    const accountAddressBytes = dataBytes.slice(0, AccountAddress.LENGTH)
-    const authKeyBytes = dataBytes.slice(AccountAddress.LENGTH)
+    const accountAddressBytes = dataBytes.slice(0, AccountAddress.LENGTH);
+    const authKeyBytes = dataBytes.slice(AccountAddress.LENGTH);
 
-    const accountAddress = AccountAddress.deserialize(new BcsDeserializer(accountAddressBytes))
-    const authKey = new AuthKey(authKeyBytes)
-    return new ReceiptIdentifier(accountAddress, authKey)
+    const accountAddress = AccountAddress.deserialize(
+      new BcsDeserializer(accountAddressBytes)
+    );
+    const authKey = new AuthKey(authKeyBytes);
+    return new ReceiptIdentifier(accountAddress, authKey);
   }
 }
 
 export class SigningMessage {
-
-  constructor(public message: bytes) {
-  }
+  constructor(public message: bytes) {}
 
   public serialize(serializer: Serializer): void {
     serializer.serializeBytes(this.message);
@@ -1753,13 +1895,15 @@ export class SigningMessage {
     const message = deserializer.deserializeBytes();
     return new SigningMessage(message);
   }
-
 }
 
 export class SignedMessage {
-
-  constructor(public account: AccountAddress, public message: SigningMessage, public authenticator: TransactionAuthenticator, public chain_id: ChainId) {
-  }
+  constructor(
+    public account: AccountAddress,
+    public message: SigningMessage,
+    public authenticator: TransactionAuthenticator,
+    public chain_id: ChainId
+  ) {}
 
   public serialize(serializer: Serializer): void {
     this.account.serialize(serializer);
@@ -1775,5 +1919,4 @@ export class SignedMessage {
     const chain_id = ChainId.deserialize(deserializer);
     return new SignedMessage(account, message, authenticator, chain_id);
   }
-
 }

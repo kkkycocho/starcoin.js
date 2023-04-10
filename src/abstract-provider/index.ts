@@ -217,4 +217,27 @@ export abstract class Provider implements OnceBlockable {
     // eslint-disable-next-line no-underscore-dangle
     return !!(value && value._isProvider);
   }
+
+  abstract getTransactionOutput(
+    transactionHash: HashValue
+  ): Promise<TransactionOutput>;
+
+  abstract getTransactionEventsByBlock(
+    blockHash: HashValue
+  ): Promise<TransactionEventView[]>;
+
+  abstract getTransactionEventsByBlockNumber(
+    blockNumber: number
+  ): Promise<TransactionEventView[]>;
+
+  abstract getTransactionEventsByBlockTag(
+    blockTag: BlockTag
+  ): Promise<TransactionEventView[]>;
+
+  // fix windows path
+  abstract getModuleIdByPath(path: string): Promise<ModuleId | undefined>;
+
+  abstract getModuleIdByAddress(
+    address: AccountAddress
+  ): Promise<ModuleId | undefined>;
 }

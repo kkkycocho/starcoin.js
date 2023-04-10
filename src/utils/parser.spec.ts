@@ -88,50 +88,59 @@ test('parse type_tag', () => {
     ['u128', 'U128'],
     ['address', 'Address'],
     ['bool', 'Bool'],
-    ['vector<0x1::M1::S1>', {
-      Vector: {
+    [
+      'vector<0x1::M1::S1>',
+      {
+        Vector: {
+          Struct: {
+            address: '0x1',
+            module: 'M1',
+            name: 'S1',
+            type_params: [],
+          },
+        },
+      },
+    ],
+    [
+      '0x1::M1::S2',
+      {
         Struct: {
           address: '0x1',
           module: 'M1',
-          name: 'S1',
-          type_params: []
-        }
-      }
-    }],
-    ['0x1::M1::S2', {
-      Struct: {
-        address: '0x1',
-        module: 'M1',
-        name: 'S2',
-        type_params: []
-      }
-    }],
-    ['0x1::M1::S2<0x1::M1::S3, 0x1::M1::S4, u128>', {
-      Struct: {
-        address: '0x1',
-        module: 'M1',
-        name: 'S2',
-        type_params: [
-          {
-            Struct: {
-              address: '0x1',
-              module: 'M1',
-              name: 'S3',
-              type_params: []
-            }
-          },
-          {
-            Struct: {
-              address: '0x1',
-              module: 'M1',
-              name: 'S4',
-              type_params: []
-            }
-          },
-          'U128'
-        ]
-      }
-    }]
+          name: 'S2',
+          type_params: [],
+        },
+      },
+    ],
+    [
+      '0x1::M1::S2<0x1::M1::S3, 0x1::M1::S4, u128>',
+      {
+        Struct: {
+          address: '0x1',
+          module: 'M1',
+          name: 'S2',
+          type_params: [
+            {
+              Struct: {
+                address: '0x1',
+                module: 'M1',
+                name: 'S3',
+                type_params: [],
+              },
+            },
+            {
+              Struct: {
+                address: '0x1',
+                module: 'M1',
+                name: 'S4',
+                type_params: [],
+              },
+            },
+            'U128',
+          ],
+        },
+      },
+    ],
   ];
 
   for (let c of testCases) {

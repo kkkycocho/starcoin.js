@@ -192,25 +192,33 @@ export class JsonRpcSigner extends Signer {
       return Promise.resolve(this._address);
     }
 
-    return this.provider.send("stc_accounts", []).then((accounts) => {
+    return this.provider.send('stc_accounts', []).then((accounts) => {
       if (accounts.length <= this._index) {
-        logger.throwError("unknown account #" + this._index, Logger.errors.UNSUPPORTED_OPERATION, {
-          operation: "getAddress"
-        });
+        logger.throwError(
+          'unknown account #' + this._index,
+          Logger.errors.UNSUPPORTED_OPERATION,
+          {
+            operation: 'getAddress',
+          }
+        );
       }
-      return this.provider.formatter.address(accounts[this._index])
+      return this.provider.formatter.address(accounts[this._index]);
     });
   }
 
-  sendUncheckedTransaction(transaction: Deferrable<TransactionRequest>): Promise<string> {
+  sendUncheckedTransaction(
+    transaction: Deferrable<TransactionRequest>
+  ): Promise<string> {
     logger.debug('sendUncheckedTransaction', transaction);
     transaction = shallowCopy(transaction);
 
     const fromAddress = this.getAddress().then((address) => {
-      if (address) { address = address.toLowerCase(); }
+      if (address) {
+        address = address.toLowerCase();
+      }
       return address;
     });
-    logger.debug(fromAddress)
+    logger.debug(fromAddress);
     // Since contract.dry_run_raw need publicKey, so we can not do it here.
     // we can only do estimateGas in the StarMask -> MetaMaskController -> newUnapprovedTransaction
 
@@ -225,44 +233,74 @@ export class JsonRpcSigner extends Signer {
 
     return resolveProperties({
       tx: resolveProperties(transaction),
-      sender: fromAddress
+      sender: fromAddress,
     }).then(({ tx, sender }) => {
       if (tx.from != null) {
         if (tx.from.toLowerCase() !== sender) {
-          logger.throwArgumentError("from address mismatch", "transaction", transaction);
+          logger.throwArgumentError(
+            'from address mismatch',
+            'transaction',
+            transaction
+          );
         }
       } else {
         tx.from = sender;
       }
 
-      const hexTx = (<any>this.provider.constructor).hexlifyTransaction(tx, { from: true, expiredSecs: true, addGasBufferMultiplier: true });
-      if (tx.addGasBufferMultiplier && typeof tx.addGasBufferMultiplier === 'number') {
+      const hexTx = (<any>this.provider.constructor).hexlifyTransaction(tx, {
+        from: true,
+        expiredSecs: true,
+        addGasBufferMultiplier: true,
+      });
+      if (
+        tx.addGasBufferMultiplier &&
+        typeof tx.addGasBufferMultiplier === 'number'
+      ) {
         hexTx.addGasBufferMultiplier = tx.addGasBufferMultiplier.toString();
       }
       logger.debug(hexTx);
-      return this.provider.send("stc_sendTransaction", [hexTx]).then((hash) => {
-        return hash;
-      }, (error) => {
-        if (error.responseText) {
-          // See: JsonRpcProvider.sendTransaction (@TODO: Expose a ._throwError??)
-          if (error.responseText.indexOf("insufficient funds") >= 0) {
-            logger.throwError("insufficient funds", Logger.errors.INSUFFICIENT_FUNDS, {
-              transaction: tx
-            });
+      return this.provider.send('stc_sendTransaction', [hexTx]).then(
+        (hash) => {
+          return hash;
+        },
+        (error) => {
+          if (error.responseText) {
+            // See: JsonRpcProvider.sendTransaction (@TODO: Expose a ._throwError??)
+            if (error.responseText.indexOf('insufficient funds') >= 0) {
+              logger.throwError(
+                'insufficient funds',
+                Logger.errors.INSUFFICIENT_FUNDS,
+                {
+                  transaction: tx,
+                }
+              );
+            }
+            if (error.responseText.indexOf('nonce too low') >= 0) {
+              logger.throwError(
+                'nonce has already been used',
+                Logger.errors.NONCE_EXPIRED,
+                {
+                  transaction: tx,
+                }
+              );
+            }
+            if (
+              error.responseText.indexOf(
+                'replacement transaction underpriced'
+              ) >= 0
+            ) {
+              logger.throwError(
+                'replacement fee too low',
+                Logger.errors.REPLACEMENT_UNDERPRICED,
+                {
+                  transaction: tx,
+                }
+              );
+            }
           }
-          if (error.responseText.indexOf("nonce too low") >= 0) {
-            logger.throwError("nonce has already been used", Logger.errors.NONCE_EXPIRED, {
-              transaction: tx
-            });
-          }
-          if (error.responseText.indexOf("replacement transaction underpriced") >= 0) {
-            logger.throwError("replacement fee too low", Logger.errors.REPLACEMENT_UNDERPRICED, {
-              transaction: tx
-            });
-          }
+          throw error;
         }
-        throw error;
-      });
+      );
     });
   }
 
@@ -374,7 +412,7 @@ const allowedTransactionKeys: { [key: string]: boolean } = {
   nonce: true,
   to: true,
   value: true,
-}
+};
 export class JsonRpcProvider extends BaseProvider {
   readonly connection: ConnectionInfo;
 
@@ -440,12 +478,12 @@ export class JsonRpcProvider extends BaseProvider {
         const chainInfo = await this.perform(RPC_ACTION.getChainInfo, null);
         chainId = chainInfo.chain_id;
         // eslint-disable-next-line no-empty
-      } catch (error) { }
+      } catch (error) {}
     }
 
     if (chainId != null) {
       try {
-        const isAptos = this.isAptos()
+        const isAptos = this.isAptos();
         return getNetwork(BigNumber.from(chainId).toNumber(), isAptos);
       } catch (error) {
         return logger.throwError(
@@ -483,50 +521,54 @@ export class JsonRpcProvider extends BaseProvider {
   }
 
   isAptos(): boolean {
-    return /aptoslabs\.com/.test(this.connection.url)
+    return /aptoslabs\.com/.test(this.connection.url);
   }
 
   send(method: string, params: Array<any>): Promise<any> {
-    const isAptos = this.isAptos()
+    const isAptos = this.isAptos();
     // most aptos Rest APIs used in Dapp's injected window.starcoin is GET
     if (isAptos) {
-      const request = null
-      let fetchUrl = this.connection.url   // default for chain.id, chain.info
-      if (method === 'state.list_resource' || method === 'getAccountResources') {
-        fetchUrl = `${ fetchUrl }accounts/${ params[0] }/resources`
+      const request = null;
+      let fetchUrl = this.connection.url; // default for chain.id, chain.info
+      if (
+        method === 'state.list_resource' ||
+        method === 'getAccountResources'
+      ) {
+        fetchUrl = `${fetchUrl}accounts/${params[0]}/resources`;
       }
       if (method === 'getAccount') {
-        fetchUrl = `${ fetchUrl }accounts/${ params[0] }`
+        fetchUrl = `${fetchUrl}accounts/${params[0]}`;
       }
       if (method === 'getAccountResource') {
-        fetchUrl = `${ fetchUrl }accounts/${ params[0] }/resource/${ encodeURI(params[1]) }`
+        fetchUrl = `${fetchUrl}accounts/${params[0]}/resource/${encodeURI(
+          params[1]
+        )}`;
       }
       if (method === 'chain.get_transaction_info') {
-        fetchUrl = `${ fetchUrl }transactions/by_hash/${ params[0] }`
+        fetchUrl = `${fetchUrl}transactions/by_hash/${params[0]}`;
       }
       return fetchJson(fetchUrl).then(
         (data) => {
-          console.log({ data })
+          console.log({ data });
           this.emit('debug', {
             action: 'response',
             request,
             response: data,
             provider: this,
           });
-          let result: any
+          let result: any;
           switch (method) {
             case 'chain.id':
-              const network = this.connection.url.split('.')[1]
-              result = { id: data.chain_id, name: network }
+              const network = this.connection.url.split('.')[1];
+              result = { id: data.chain_id, name: network };
               break;
             case 'chain.info':
-              result = { head: { number: Number(data.block_height) } }
+              result = { head: { number: Number(data.block_height) } };
               break;
             default:
-              result = data
+              result = data;
           }
           return result;
-
         },
         (error) => {
           this.emit('debug', {
@@ -590,7 +632,10 @@ export class JsonRpcProvider extends BaseProvider {
       case RPC_ACTION.dryRun:
         return ['contract.dry_run', [params.transaction]];
       case RPC_ACTION.dryRunRaw:
-        return ['contract.dry_run_raw', [params.rawUserTransactionHex, params.publicKeyHex]];
+        return [
+          'contract.dry_run_raw',
+          [params.rawUserTransactionHex, params.publicKeyHex],
+        ];
       // case 'getBalance':
       //   return [
       //     'eth_getBalance',
@@ -667,7 +712,7 @@ export class JsonRpcProvider extends BaseProvider {
 
     if (args === undefined) {
       logger.throwError(
-        `${ method } not implemented`,
+        `${method} not implemented`,
         Logger.errors.NOT_IMPLEMENTED,
         { operation: method }
       );
@@ -773,12 +818,17 @@ export class JsonRpcProvider extends BaseProvider {
   //       before this is called
   // @TODO: This will likely be removed in future versions and prepareRequest
   //        will be the preferred method for this.
-  static hexlifyTransaction(transaction: TransactionRequest, allowExtra?: { [key: string]: boolean }): { [key: string]: string } {
+  static hexlifyTransaction(
+    transaction: TransactionRequest,
+    allowExtra?: { [key: string]: boolean }
+  ): { [key: string]: string } {
     // Check only allowed properties are given
     const allowed = shallowCopy(allowedTransactionKeys);
     if (allowExtra) {
       for (const key in allowExtra) {
-        if (allowExtra[key]) { allowed[key] = true; }
+        if (allowExtra[key]) {
+          allowed[key] = true;
+        }
       }
     }
     checkProperties(transaction, allowed);
@@ -786,20 +836,30 @@ export class JsonRpcProvider extends BaseProvider {
     const result: { [key: string]: string } = {};
 
     // Some nodes (INFURA ropsten; INFURA mainnet is fine) do not like leading zeros.
-    ["gasLimit", "gasPrice", "nonce", "value", "expiredSecs"].forEach(function (key) {
-      if ((<any>transaction)[key] == null) { return; }
+    ['gasLimit', 'gasPrice', 'nonce', 'value', 'expiredSecs'].forEach(function (
+      key
+    ) {
+      if ((<any>transaction)[key] == null) {
+        return;
+      }
       const value = hexValue((<any>transaction)[key]);
-      if (key === "gasLimit") { key = "gas"; }
+      if (key === 'gasLimit') {
+        key = 'gas';
+      }
       result[key] = value;
     });
 
-    ["from", "to", "data"].forEach(function (key) {
-      if ((<any>transaction)[key] == null) { return; }
+    ['from', 'to', 'data'].forEach(function (key) {
+      if ((<any>transaction)[key] == null) {
+        return;
+      }
       result[key] = hexlify((<any>transaction)[key]);
     });
 
-    ["functionAptos"].forEach(function (key) {
-      if ((<any>transaction)[key] == null) { return; }
+    ['functionAptos'].forEach(function (key) {
+      if ((<any>transaction)[key] == null) {
+        return;
+      }
       result[key] = (<any>transaction)[key];
     });
 

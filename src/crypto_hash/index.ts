@@ -40,15 +40,14 @@ export function createHash(typename: string): CryptoHash {
   return new DefaultHasher(typename);
 }
 
-
 export function createUserTransactionHasher(): CryptoHash {
-  return createHash("SignedUserTransaction");
+  return createHash('SignedUserTransaction');
 }
 
 export function createRawUserTransactionHasher(): CryptoHash {
-  return createHash("RawUserTransaction");
+  return createHash('RawUserTransaction');
 }
 
 export function createSigningMessageHasher(): CryptoHash {
-  return createHash("SigningMessage");
+  return createHash('SigningMessage');
 }

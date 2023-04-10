@@ -15,7 +15,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "yarn.lock" }}
+            - v1-dependencies-{{ checksum "yarn.lock" }}
       - run: yarn --frozen-lockfile
       - save_cache:
           paths:
@@ -34,7 +34,6 @@ jobs:
       - run:
           name: Run tests
           command: yarn test
-
 
   lint:
     <<: *defaults

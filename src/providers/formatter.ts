@@ -3,7 +3,7 @@ import {
   BytesLike,
   hexDataLength,
   hexValue,
-  isHexString
+  isHexString,
 } from '@ethersproject/bytes';
 import { Logger } from '@ethersproject/logger';
 import { shallowCopy } from '@ethersproject/properties';
@@ -21,17 +21,21 @@ import {
   U64,
   U8,
   AnnotatedMoveValue,
-  MoveValue, AnnotatedMoveStruct, MoveStruct,
+  MoveValue,
+  AnnotatedMoveStruct,
+  MoveStruct,
   BlockMetadataView,
   BlockView,
   BlockWithTransactions,
   BlockWithTxnHashes,
   Filter,
   TransactionEventView,
-  TransactionInfoView, TransactionOutput,
-  TransactionResponse, TransactionWriteAction,
-  RawUserTransactionView, SignedUserTransactionView
-
+  TransactionInfoView,
+  TransactionOutput,
+  TransactionResponse,
+  TransactionWriteAction,
+  RawUserTransactionView,
+  SignedUserTransactionView,
 } from '../types';
 import { version } from '../version';
 import { decodeSignedUserTransaction } from '../encoding';
@@ -98,8 +102,7 @@ export function formatMoveValue(v: AnnotatedMoveValue): MoveValue {
       {}
     );
   }
-  throw new Error(`invalid annotated move value, ${ JSON.stringify(v) }`);
-
+  throw new Error(`invalid annotated move value, ${JSON.stringify(v)}`);
 }
 
 export class Formatter {
@@ -138,13 +141,13 @@ export class Formatter {
       gas_unit_price: u64,
       gas_token_code: (v) => v,
       expiration_timestamp_secs: u64,
-      chain_id: u8
+      chain_id: u8,
     };
 
     formats.signedUserTransaction = {
       transaction_hash: hash,
       raw_txn: this.rawUserTransaction.bind(this),
-      authenticator: this.transactionAuthenticator.bind(this)
+      authenticator: this.transactionAuthenticator.bind(this),
     };
 
     formats.blockMetadata = {
@@ -155,14 +158,14 @@ export class Formatter {
       uncles: u64,
       number: u64,
       chain_id: u8,
-      parent_gas_used: u64
+      parent_gas_used: u64,
     };
 
     const txnBlockInfo = {
       block_hash: Formatter.allowNull(hash),
       block_number: Formatter.allowNull(u64),
-      transaction_hash: Formatter.allowNull(hash,),
-      transaction_index: Formatter.allowNull(number)
+      transaction_hash: Formatter.allowNull(hash),
+      transaction_index: Formatter.allowNull(number),
     };
 
     formats.transaction = {
@@ -171,13 +174,13 @@ export class Formatter {
         this.signedUserTransaction.bind(this),
         null
       ),
-      ...txnBlockInfo
+      ...txnBlockInfo,
     };
     formats.blockBody = {
       Full: Formatter.allowNull(
         Formatter.arrayOf(this.signedUserTransaction.bind(this))
       ),
-      Hashes: Formatter.allowNull(Formatter.arrayOf(hash))
+      Hashes: Formatter.allowNull(Formatter.arrayOf(hash)),
     };
     formats.blockHeader = {
       block_hash: hash,
@@ -202,17 +205,17 @@ export class Formatter {
       /// hash for block body
       body_hash: hash,
       /// The chain id
-      chain_id: u8
+      chain_id: u8,
     };
 
     formats.blockWithTransactions = {
       header: (value) => Formatter.check(formats.blockHeader, value),
-      body: (value) => value
+      body: (value) => value,
     };
     formats.block = {
       header: (value) => Formatter.check(formats.blockHeader, value),
       body: (value) => Formatter.check(formats.blockBody, value),
-      confirmations: number
+      confirmations: number,
     };
 
     formats.transactionInfo = {
@@ -224,7 +227,7 @@ export class Formatter {
         Formatter.arrayOf(this.transactionEvent.bind(this)),
         null
       ),
-      ...txnBlockInfo
+      ...txnBlockInfo,
     };
 
     formats.transactionEvent = {
@@ -232,14 +235,18 @@ export class Formatter {
       type_tags: this.typeTag.bind(this),
       event_key: hex,
       event_seq_number: u64,
-      ...txnBlockInfo
+      ...txnBlockInfo,
     };
 
     formats.transactionOutput = {
       gas_used: u64,
       status: this.transactionVmStatus.bind(this),
-      events: Formatter.allowNull(Formatter.arrayOf(this.transactionEvent.bind(this))),
-      write_set: Formatter.allowNull(Formatter.arrayOf(this.transactionWriteAction.bind(this)))
+      events: Formatter.allowNull(
+        Formatter.arrayOf(this.transactionEvent.bind(this))
+      ),
+      write_set: Formatter.allowNull(
+        Formatter.arrayOf(this.transactionWriteAction.bind(this))
+      ),
     };
 
     formats.blockWithTransactions = shallowCopy(formats.block);
@@ -251,7 +258,7 @@ export class Formatter {
       from_block: Formatter.allowNull(blockTag),
       to_block: Formatter.allowNull(blockTag),
       event_keys: Formatter.arrayOf(hex),
-      limit: Formatter.allowNull(number)
+      limit: Formatter.allowNull(number),
     };
 
     return formats;
@@ -303,20 +310,20 @@ export class Formatter {
         [
           TransactionVMStatus_Executed,
           TransactionVMStatus_OutOfGas,
-          TransactionVMStatus_MiscellaneousError
+          TransactionVMStatus_MiscellaneousError,
         ].includes(value)
       ) {
         return value as TransactionVMStatus;
       }
 
-      throw new Error(`invalid txn vm_status: ${ value }`);
+      throw new Error(`invalid txn vm_status: ${value}`);
     } else if (typeof value === 'object') {
       if (value.MoveAbort) {
         return {
           MoveAbort: {
             location: value.MoveAbort.location,
-            abort_code: this.u64(value.MoveAbort.abort_code)
-          }
+            abort_code: this.u64(value.MoveAbort.abort_code),
+          },
         };
       }
       if (value.ExecutionFailure) {
@@ -325,13 +332,13 @@ export class Formatter {
       if (value.Discard) {
         return {
           Discard: {
-            status_code: this.u64(value.Discard.status_code)
-          }
+            status_code: this.u64(value.Discard.status_code),
+          },
         };
       }
-      throw new Error(`invalid txn vm_status: ${ JSON.stringify(value) }`);
+      throw new Error(`invalid txn vm_status: ${JSON.stringify(value)}`);
     } else {
-      throw new TypeError(`invalid txn vm_status type ${ value }`);
+      throw new TypeError(`invalid txn vm_status type ${value}`);
     }
   }
 
@@ -347,10 +354,11 @@ export class Formatter {
   u8(value: any): U8 {
     if (typeof value === 'string') {
       return Number.parseInt(value, 10);
-    } if (typeof value === 'number') {
+    }
+    if (typeof value === 'number') {
       return value;
     }
-    throw new Error(`invalid u8: ${ value }`);
+    throw new Error(`invalid u8: ${value}`);
   }
 
   u64(number: any): U64 {
@@ -368,7 +376,7 @@ export class Formatter {
     if (typeof number === 'number') {
       return number.toString();
     }
-    throw new Error(`invalid bigint: ${ number }`);
+    throw new Error(`invalid bigint: ${number}`);
   }
 
   static bigint(number: any): number | bigint {
@@ -379,12 +387,11 @@ export class Formatter {
       }
       // eslint-disable-next-line radix
       return Number.parseInt(number);
-
     }
     if (typeof number === 'number') {
       return number;
     }
-    throw new TypeError(`invalid bigint: ${ number }`);
+    throw new TypeError(`invalid bigint: ${number}`);
   }
 
   // Strict! Used on input.
@@ -406,13 +413,13 @@ export class Formatter {
         return false;
       }
     }
-    throw new Error(`invalid boolean - ${ value }`);
+    throw new Error(`invalid boolean - ${value}`);
   }
 
   hex(value: any, strict?: boolean): string {
     if (typeof value === 'string') {
       if (!strict && value.slice(0, 2) !== '0x') {
-        value = `0x${ value }`;
+        value = `0x${value}`;
       }
       if (isHexString(value)) {
         return value.toLowerCase();
@@ -424,7 +431,7 @@ export class Formatter {
   data(value: any, strict?: boolean): string {
     const result = this.hex(value, strict);
     if (result.length % 2 !== 0) {
-      throw new Error(`invalid data; odd-length - ${ value }`);
+      throw new Error(`invalid data; odd-length - ${value}`);
     }
     return result;
   }
@@ -436,7 +443,7 @@ export class Formatter {
       logger.throwArgumentError('invalid address', 'address', value);
     }
     const result = this.hex(value, true);
-    const length = hexDataLength(result)
+    const length = hexDataLength(result);
     if (length !== 16 && length !== 32) {
       return logger.throwArgumentError('invalid address', 'value', value);
     }
@@ -503,7 +510,7 @@ export class Formatter {
     return {
       header: block.header,
       transactions,
-      confirmations: block.confirmations
+      confirmations: block.confirmations,
     };
   }
 
@@ -514,7 +521,7 @@ export class Formatter {
       transactions: (transactions as SignedUserTransactionView[]).map(
         (t) => t.transaction_hash
       ),
-      confirmations
+      confirmations,
     };
   }
 
@@ -523,7 +530,7 @@ export class Formatter {
     return {
       header,
       transactions: transactions as Array<SignedUserTransactionView>,
-      confirmations
+      confirmations,
     };
   }
 
@@ -640,7 +647,8 @@ export class Formatter {
   topics(value: any): any {
     if (Array.isArray(value)) {
       return value.map((v) => this.topics(v));
-    } if (value != undefined) {
+    }
+    if (value != undefined) {
       return this.hash(value, true);
     }
 
@@ -704,8 +712,6 @@ export class Formatter {
       return result;
     };
   }
-
-
 }
 
 //

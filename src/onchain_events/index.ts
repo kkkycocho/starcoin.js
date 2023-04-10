@@ -139,7 +139,7 @@ onchain_events.DepositEvent.prototype.toJS = function (): DepositEvent {
   };
 };
 
-// Uint8Array is a general-purpose byte-array that’s available in both nodejs and browsers. 
+// Uint8Array is a general-purpose byte-array that’s available in both nodejs and browsers.
 // Buffer is a subclass of Uint8Array that’s only available in nodejs
 // So we must use Uint8Array, instead of Buffer
 // https://github.com/oBusk/read-bigint/blob/main/src/read-bigint-64-le.ts
@@ -155,9 +155,9 @@ function readBigInt64LE(data: Uint8Array, offset = 0): bigint {
     (BigInt(val) << BigInt(32)) +
     BigInt(
       first +
-      data[++offset] * 2 ** 8 +
-      data[++offset] * 2 ** 16 +
-      data[++offset] * 2 ** 24,
+        data[++offset] * 2 ** 8 +
+        data[++offset] * 2 ** 16 +
+        data[++offset] * 2 ** 24
     )
   );
 }
@@ -170,7 +170,7 @@ export function decodeEventKey(
   const bytes = arrayify(eventKey);
   if (bytes.byteLength !== EVENT_KEY_LENGTH) {
     throw new Error(
-      `invalid eventkey data, expect byte length to be ${ EVENT_KEY_LENGTH }, actual: ${ bytes.byteLength }`
+      `invalid eventkey data, expect byte length to be ${EVENT_KEY_LENGTH}, actual: ${bytes.byteLength}`
     );
   }
   const saltBytes = bytes.slice(0, EVENT_KEY_LENGTH - ACCOUNT_ADDRESS_LENGTH);
@@ -183,9 +183,6 @@ export function decodeEventKey(
 
 export function decodeEventData(eventName: string, eventData: string): any {
   const eventType = onchain_events[eventName];
-  const d = bcsDecode(
-    eventType,
-    eventData
-  );
+  const d = bcsDecode(eventType, eventData);
   return d;
 }

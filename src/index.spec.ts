@@ -1,5 +1,9 @@
 import { bcsDecode } from './encoding';
-import { DepositEvent, NewBlockEvent, BlockRewardEvent } from './lib/runtime/onchain_events';
+import {
+  DepositEvent,
+  NewBlockEvent,
+  BlockRewardEvent,
+} from './lib/runtime/onchain_events';
 import './index';
 
 describe('test onchain events decoding', () => {

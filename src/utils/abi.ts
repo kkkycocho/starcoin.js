@@ -1,7 +1,7 @@
-import { BcsDeserializer } from "../lib/runtime/bcs";
-import * as starcoin_types from "../lib/runtime/starcoin_types";
-import { ScriptABI } from "../types";
-import * as bcs_to_json from "../encoding";
+import { BcsDeserializer } from '../lib/runtime/bcs';
+import * as starcoin_types from '../lib/runtime/starcoin_types';
+import { ScriptABI } from '../types';
+import * as bcs_to_json from '../encoding';
 
 export function decodeTransactionScriptABI(bytes: Uint8Array): ScriptABI {
   const de = new BcsDeserializer(bytes);

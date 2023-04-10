@@ -2,7 +2,7 @@ import { arrayify, BytesLike, hexlify } from '@ethersproject/bytes';
 import { addHexPrefix, stripHexPrefix } from 'ethereumjs-util';
 import * as ed from '@noble/ed25519';
 import { sha3_256 } from 'js-sha3';
-import { createUserTransactionHasher } from "../crypto_hash";
+import { createUserTransactionHasher } from '../crypto_hash';
 import { BcsDeserializer, BcsSerializer } from '../lib/runtime/bcs';
 import * as starcoin_types from '../lib/runtime/starcoin_types';
 import * as serde from '../lib/runtime/serde';
@@ -135,40 +135,40 @@ export function decodeTransactionPayload(
           packagePayload.init_script === null
             ? undefined
             : {
-              func: {
-                address: addressFromSCS(
-                  packagePayload.init_script.module.address
+                func: {
+                  address: addressFromSCS(
+                    packagePayload.init_script.module.address
+                  ),
+                  module: packagePayload.init_script.module.name.value,
+                  functionName: packagePayload.init_script.func.value,
+                },
+                args: packagePayload.init_script.args.map((arg) =>
+                  hexlify(arg)
                 ),
-                module: packagePayload.init_script.module.name.value,
-                functionName: packagePayload.init_script.func.value,
+                ty_args: packagePayload.init_script.ty_args.map((ty) =>
+                  typeTagFromSCS(ty)
+                ),
               },
-              args: packagePayload.init_script.args.map((arg) =>
-                hexlify(arg)
-              ),
-              ty_args: packagePayload.init_script.ty_args.map((ty) =>
-                typeTagFromSCS(ty)
-              ),
-            },
       },
     };
   }
 
-  throw new TypeError(`cannot decode bcs data ${ bcsTxnPayload }`);
+  throw new TypeError(`cannot decode bcs data ${bcsTxnPayload}`);
 }
 
 export function packageHexToTransactionPayload(
   packageHex: string
 ): starcoin_types.TransactionPayload {
-  const deserializer = new BcsDeserializer(arrayify(addHexPrefix(packageHex)))
-  const transactionPayload = starcoin_types.TransactionPayloadVariantPackage.load(deserializer)
-  return transactionPayload
+  const deserializer = new BcsDeserializer(arrayify(addHexPrefix(packageHex)));
+  const transactionPayload = starcoin_types.TransactionPayloadVariantPackage.load(
+    deserializer
+  );
+  return transactionPayload;
 }
 
-export function packageHexToTransactionPayloadHex(
-  packageHex: string
-): string {
-  const transactionPayload = packageHexToTransactionPayload(packageHex)
-  return bcsEncode(transactionPayload)
+export function packageHexToTransactionPayloadHex(packageHex: string): string {
+  const transactionPayload = packageHexToTransactionPayload(packageHex);
+  return bcsEncode(transactionPayload);
 }
 
 export function addressToSCS(
@@ -210,7 +210,7 @@ export function typeTagToSCS(ty: TypeTag): starcoin_types.TypeTag {
   if ('Struct' in ty) {
     return new starcoin_types.TypeTagVariantStruct(structTagToSCS(ty.Struct));
   }
-  throw new Error(`invalid type tag: ${ ty }`);
+  throw new Error(`invalid type tag: ${ty}`);
 }
 
 export function structTagToSCS(data: StructTag): starcoin_types.StructTag {
@@ -263,52 +263,68 @@ export function typeTagFromSCS(bcs_data: starcoin_types.TypeTag): TypeTag {
       Vector: typeTagFromSCS(bcs_data.value),
     };
   }
-  throw new TypeError(`invalid bcs type tag: ${ bcs_data }`);
+  throw new TypeError(`invalid bcs type tag: ${bcs_data}`);
 }
 
-export async function privateKeyToPublicKey(privateKey: string): Promise<string> {
-  const publicKey = await ed.getPublicKey(stripHexPrefix(privateKey))
-  return hexlify(publicKey)
-}
-
-// singleMulti: 0-single, 1-multi
-export function publicKeyToAuthKey(publicKey: string, singleMulti = accountType.SINGLE): string {
-  const hasher = sha3_256.create()
-  hasher.update(fromHexString(publicKey))
-  hasher.update(fromHexString(hexlify(singleMulti)))
-  const hash = hasher.hex()
-  return addHexPrefix(hash)
+export async function privateKeyToPublicKey(
+  privateKey: string
+): Promise<string> {
+  const publicKey = await ed.getPublicKey(stripHexPrefix(privateKey));
+  return hexlify(publicKey);
 }
 
 // singleMulti: 0-single, 1-multi
-export function publicKeyToAddress(publicKey: string, singleMulti = accountType.SINGLE): string {
-  const hasher = sha3_256.create()
-  hasher.update(fromHexString(publicKey))
-  hasher.update(fromHexString(hexlify(singleMulti)))
-  const hash = hasher.hex()
-  const address = hash.slice(hash.length / 2)
-  return addHexPrefix(address)
+export function publicKeyToAuthKey(
+  publicKey: string,
+  singleMulti = accountType.SINGLE
+): string {
+  const hasher = sha3_256.create();
+  hasher.update(fromHexString(publicKey));
+  hasher.update(fromHexString(hexlify(singleMulti)));
+  const hash = hasher.hex();
+  return addHexPrefix(hash);
 }
 
-export function encodeReceiptIdentifier(addressStr: string, authKeyStr = ''): string {
-  const accountAddress = addressToSCS(addressStr)
-  const authKey = new starcoin_types.AuthKey(Buffer.from(authKeyStr, 'hex'))
+// singleMulti: 0-single, 1-multi
+export function publicKeyToAddress(
+  publicKey: string,
+  singleMulti = accountType.SINGLE
+): string {
+  const hasher = sha3_256.create();
+  hasher.update(fromHexString(publicKey));
+  hasher.update(fromHexString(hexlify(singleMulti)));
+  const hash = hasher.hex();
+  const address = hash.slice(hash.length / 2);
+  return addHexPrefix(address);
+}
+
+export function encodeReceiptIdentifier(
+  addressStr: string,
+  authKeyStr = ''
+): string {
+  const accountAddress = addressToSCS(addressStr);
+  const authKey = new starcoin_types.AuthKey(Buffer.from(authKeyStr, 'hex'));
   return new starcoin_types.ReceiptIdentifier(accountAddress, authKey).encode();
 }
 
 export function decodeReceiptIdentifier(value: string): ReceiptIdentifierView {
-  const receiptIdentifier = starcoin_types.ReceiptIdentifier.decode(value)
-  const accountAddress = stripHexPrefix(addressFromSCS(receiptIdentifier.accountAddress))
-  const authKey = receiptIdentifier.authKey.hex()
-  const receiptIdentifierView = { accountAddress, authKey }
-  return receiptIdentifierView
+  const receiptIdentifier = starcoin_types.ReceiptIdentifier.decode(value);
+  const accountAddress = stripHexPrefix(
+    addressFromSCS(receiptIdentifier.accountAddress)
+  );
+  const authKey = receiptIdentifier.authKey.hex();
+  const receiptIdentifierView = { accountAddress, authKey };
+  return receiptIdentifierView;
 }
 
 export function publicKeyToReceiptIdentifier(publicKey: string): string {
-  const address = publicKeyToAddress(publicKey)
-  const authKey = publicKeyToAuthKey(publicKey)
-  const receiptIdentifier = encodeReceiptIdentifier(stripHexPrefix(address), stripHexPrefix(authKey))
-  return receiptIdentifier
+  const address = publicKeyToAddress(publicKey);
+  const authKey = publicKeyToAuthKey(publicKey);
+  const receiptIdentifier = encodeReceiptIdentifier(
+    stripHexPrefix(address),
+    stripHexPrefix(authKey)
+  );
+  return receiptIdentifier;
 }
 
 // export function txnArgFromSCS(data: starcoin_types.TransactionArgument): TransactionArgument {
@@ -368,20 +384,20 @@ export function stringToBytes(str: string): BytesLike {
   len = str.length;
   for (let i = 0; i < len; i++) {
     c = str.charCodeAt(i);
-    if (c >= 0x010000 && c <= 0x10FFFF) {
-      bytes.push(((c >> 18) & 0x07) | 0xF0);
-      bytes.push(((c >> 12) & 0x3F) | 0x80);
-      bytes.push(((c >> 6) & 0x3F) | 0x80);
-      bytes.push((c & 0x3F) | 0x80);
-    } else if (c >= 0x000800 && c <= 0x00FFFF) {
-      bytes.push(((c >> 12) & 0x0F) | 0xE0);
-      bytes.push(((c >> 6) & 0x3F) | 0x80);
-      bytes.push((c & 0x3F) | 0x80);
-    } else if (c >= 0x000080 && c <= 0x0007FF) {
-      bytes.push(((c >> 6) & 0x1F) | 0xC0);
-      bytes.push((c & 0x3F) | 0x80);
+    if (c >= 0x010000 && c <= 0x10ffff) {
+      bytes.push(((c >> 18) & 0x07) | 0xf0);
+      bytes.push(((c >> 12) & 0x3f) | 0x80);
+      bytes.push(((c >> 6) & 0x3f) | 0x80);
+      bytes.push((c & 0x3f) | 0x80);
+    } else if (c >= 0x000800 && c <= 0x00ffff) {
+      bytes.push(((c >> 12) & 0x0f) | 0xe0);
+      bytes.push(((c >> 6) & 0x3f) | 0x80);
+      bytes.push((c & 0x3f) | 0x80);
+    } else if (c >= 0x000080 && c <= 0x0007ff) {
+      bytes.push(((c >> 6) & 0x1f) | 0xc0);
+      bytes.push((c & 0x3f) | 0x80);
     } else {
-      bytes.push(c & 0xFF);
+      bytes.push(c & 0xff);
     }
   }
   return bytes;

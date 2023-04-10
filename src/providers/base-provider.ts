@@ -729,6 +729,18 @@ export abstract class BaseProvider extends Provider {
     return this._fastBlockNumberPromise;
   }
 
+  _getInternalBlockNumber(timeout: number): Promise<number> {
+    if (this._internalBlockNumber) {
+      return this._internalBlockNumber;
+    }
+  }
+
+  _startInternalBlockNumber(timeout: number): void {
+    if (this._internalBlockNumber) {
+      return;
+    }
+    
+
   _setFastBlockNumber(blockNumber: number): void {
     // Older block, maybe a stale request
     if (this._fastBlockNumber != null && blockNumber < this._fastBlockNumber) {

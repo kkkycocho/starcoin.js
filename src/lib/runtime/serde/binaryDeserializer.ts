@@ -26,8 +26,8 @@ export abstract class BinaryDeserializer implements Deserializer {
   abstract deserializeVariantIndex(): number;
 
   abstract checkThatKeySlicesAreIncreasing(
-      key1: [number, number],
-      key2: [number, number]
+    key1: [number, number],
+    key2: [number, number]
   ): void;
 
   public deserializeStr(): string {

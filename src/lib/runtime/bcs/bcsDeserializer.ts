@@ -35,10 +35,10 @@ export class BcsDeserializer extends BinaryDeserializer {
   }
 
   public checkThatKeySlicesAreIncreasing(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      key1: [number, number],
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      key2: [number, number]
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    key1: [number, number],
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    key2: [number, number]
   ): void {
     return;
   }

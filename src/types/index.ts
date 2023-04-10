@@ -1,5 +1,5 @@
-import { BigNumberish } from "@ethersproject/bignumber";
-import { BytesLike } from "@ethersproject/bytes";
+import { BigNumberish } from '@ethersproject/bignumber';
+import { BytesLike } from '@ethersproject/bytes';
 import { uint128, uint64, uint8 } from '../lib/runtime/serde';
 
 export type Identifier = string;
@@ -24,7 +24,7 @@ export type HexString = string;
 export const accountType = {
   SINGLE: 0,
   MULTI: 1,
-}
+};
 
 export interface StructTag {
   address: string;
@@ -45,7 +45,7 @@ export type TypeTag =
   | { Struct: StructTag };
 
 export function formatStructTag(structTag: StructTag): string {
-  let s = `${ structTag.address }::${ structTag.module }::${ structTag.name }`;
+  let s = `${structTag.address}::${structTag.module}::${structTag.name}`;
 
   if (structTag.type_params && structTag.type_params.length > 0) {
     s = s.concat('<');
@@ -67,7 +67,7 @@ export function formatTypeTag(typeTag: TypeTag): string {
     if (typeTag.Vector !== undefined) {
       // @ts-ignore
       let subTypeTag: TypeTag = typeTag.Vector;
-      return `vector<${ formatTypeTag(subTypeTag) }>`;
+      return `vector<${formatTypeTag(subTypeTag)}>`;
     }
 
     // @ts-ignore
@@ -116,17 +116,17 @@ export type SignatureType = 'Ed25519' | 'MultiEd25519';
 
 export type TransactionAuthenticator =
   | {
-    Ed25519: {
-      public_key: Ed25519PublicKey;
-      signature: Ed25519Signature;
-    };
-  }
+      Ed25519: {
+        public_key: Ed25519PublicKey;
+        signature: Ed25519Signature;
+      };
+    }
   | {
-    MultiEd25519: {
-      public_key: MultiEd25519PublicKey;
-      signature: MultiEd25519Signature;
+      MultiEd25519: {
+        public_key: MultiEd25519PublicKey;
+        signature: MultiEd25519Signature;
+      };
     };
-  };
 
 // export type TransactionArgument =
 //   | { U8: number }
@@ -237,11 +237,11 @@ export interface ScriptABI {
 export type AbortLocation =
   | 'Script'
   | {
-    Module: {
-      address: AccountAddress;
-      name: Identifier;
+      Module: {
+        address: AccountAddress;
+        name: Identifier;
+      };
     };
-  };
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export const TransactionVMStatus_Executed = 'Executed';
@@ -254,22 +254,22 @@ export type TransactionVMStatus =
   | 'OutOfGas'
   | 'MiscellaneousError'
   | {
-    MoveAbort: { location: AbortLocation; abort_code: U64 };
-  }
+      MoveAbort: { location: AbortLocation; abort_code: U64 };
+    }
   | {
-    ExecutionFailure: {
-      location: AbortLocation;
-      function: U16;
-      code_offset: U16;
-    };
-  }
+      ExecutionFailure: {
+        location: AbortLocation;
+        function: U16;
+        code_offset: U16;
+      };
+    }
   | { Discard: { status_code: U64 } };
 
 // Exported Types
 
 export interface ReceiptIdentifierView {
-  accountAddress: string,
-  authKey: string
+  accountAddress: string;
+  authKey: string;
 }
 
 export interface RawUserTransactionView {
@@ -315,23 +315,23 @@ export interface SignedUserTransactionView {
 }
 
 export interface TransactionRequest {
-  to?: string,
-  from?: string,
-  nonce?: BigNumberish,
+  to?: string;
+  from?: string;
+  nonce?: BigNumberish;
 
-  gasLimit?: BigNumberish,
-  gasPrice?: BigNumberish,
+  gasLimit?: BigNumberish;
+  gasPrice?: BigNumberish;
 
-  data?: BytesLike,
-  value?: BigNumberish,
+  data?: BytesLike;
+  value?: BigNumberish;
   expiredSecs?: U64;
   addGasBufferMultiplier?: U8;
 
   functionAptos?: {
-    type?: string,
-    function: string,
-    type_arguments: Array<string>,
-    arguments: Array<any>,
+    type?: string;
+    function: string;
+    type_arguments: Array<string>;
+    arguments: Array<any>;
   };
 
   sender?: AccountAddress;
@@ -366,7 +366,7 @@ export interface CallRequest {
 
 export function formatFunctionId(functionId: FunctionId): string {
   if (typeof functionId !== 'string') {
-    return `${ functionId.address }::${ functionId.module }::${ functionId.functionName }`;
+    return `${functionId.address}::${functionId.module}::${functionId.functionName}`;
   } else {
     return functionId;
   }
@@ -380,7 +380,7 @@ export function parseFunctionId(
   } else {
     const parts = functionId.split('::', 3);
     if (parts.length !== 3) {
-      throw new Error(`cannot parse ${ functionId } into FunctionId`);
+      throw new Error(`cannot parse ${functionId} into FunctionId`);
     }
     return {
       address: parts[0],

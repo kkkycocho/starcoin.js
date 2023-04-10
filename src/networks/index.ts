@@ -78,7 +78,7 @@ export function getNetwork(network: Networkish, isAptos = false): Network {
   if (network == null) {
     return null;
   }
-  const NETWORKS = isAptos ? APTOS_NETWORKS : STANDARD_NETWORKS
+  const NETWORKS = isAptos ? APTOS_NETWORKS : STANDARD_NETWORKS;
   if (typeof network === 'number') {
     for (const name in NETWORKS) {
       const standard = NETWORKS[name];

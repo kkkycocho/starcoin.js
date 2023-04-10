@@ -1,10 +1,22 @@
 // eslint-disable-next-line max-classes-per-file
 import { Bytes } from '@ethersproject/bytes';
-import { deepCopy, Deferrable, defineReadOnly, resolveProperties, shallowCopy } from '@ethersproject/properties';
+import {
+  deepCopy,
+  Deferrable,
+  defineReadOnly,
+  resolveProperties,
+  shallowCopy,
+} from '@ethersproject/properties';
 import { Logger } from '@ethersproject/logger';
 import { Provider } from '../abstract-provider';
 import { version } from '../version';
-import { U128, U64, BlockTag, TransactionRequest, TransactionResponse } from '../types';
+import {
+  U128,
+  U64,
+  BlockTag,
+  TransactionRequest,
+  TransactionResponse,
+} from '../types';
 
 const logger = new Logger(version);
 
@@ -17,16 +29,15 @@ const allowedTransactionKeys = new Set([
   'max_gas_amount',
   'gas_unit_price',
   'gas_token_code',
-  'chain_id'
+  'chain_id',
 ]);
 
 // FIXME: change the error data.
 const forwardErrors = new Set([
   Logger.errors.INSUFFICIENT_FUNDS,
   Logger.errors.NONCE_EXPIRED,
-  Logger.errors.REPLACEMENT_UNDERPRICED
+  Logger.errors.REPLACEMENT_UNDERPRICED,
 ]);
-
 
 export abstract class Signer {
   readonly provider?: Provider;
@@ -47,7 +58,9 @@ export abstract class Signer {
   // The EXACT transaction MUST be signed, and NO additional properties to be added.
   // - This MAY throw if signing transactions is not supports, but if
   //   it does, sentTransaction MUST be overridden.
-  abstract signTransaction(transaction: Deferrable<TransactionRequest>): Promise<string>;
+  abstract signTransaction(
+    transaction: Deferrable<TransactionRequest>
+  ): Promise<string>;
 
   // Returns a new instance of the Signer, connected to provider.
   // This MAY throw if changing providers is not supported.
@@ -55,13 +68,11 @@ export abstract class Signer {
 
   readonly _isSigner: boolean;
 
-
   // Sub-classes MUST call super
   constructor() {
     logger.checkAbstract(new.target, Signer);
     defineReadOnly(this, '_isSigner', true);
   }
-
 
   // Sub-classes MAY override these
 
@@ -97,7 +108,9 @@ export abstract class Signer {
   // }
 
   // Populates all fields in a transaction, signs it and sends it to the network
-  sendTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionResponse> {
+  sendTransaction(
+    transaction: Deferrable<TransactionRequest>
+  ): Promise<TransactionResponse> {
     this.checkProvider('sendTransaction');
     return this.populateTransaction(transaction).then((tx) => {
       return this.signTransaction(tx).then((signedTx) => {
@@ -126,11 +139,17 @@ export abstract class Signer {
   //   - call
   //   - estimateGas
   //   - populateTransaction (and therefor sendTransaction)
-  checkTransaction(transaction: Deferrable<TransactionRequest>): Deferrable<TransactionRequest> {
+  checkTransaction(
+    transaction: Deferrable<TransactionRequest>
+  ): Deferrable<TransactionRequest> {
     // eslint-disable-next-line no-restricted-syntax
     for (const key of Object.keys(transaction)) {
       if (!allowedTransactionKeys.has(key)) {
-        logger.throwArgumentError(`invalid transaction key: ${ key }`, 'transaction', transaction);
+        logger.throwArgumentError(
+          `invalid transaction key: ${key}`,
+          'transaction',
+          transaction
+        );
       }
     }
 
@@ -142,10 +161,14 @@ export abstract class Signer {
       // Make sure any provided address matches this signer
       tx.sender = Promise.all([
         Promise.resolve(tx.sender),
-        this.getAddress()
+        this.getAddress(),
       ]).then((result) => {
         if (result[0] !== result[1]) {
-          logger.throwArgumentError('from address mismatch', 'transaction', transaction);
+          logger.throwArgumentError(
+            'from address mismatch',
+            'transaction',
+            transaction
+          );
         }
         return result[0];
       });
@@ -158,9 +181,12 @@ export abstract class Signer {
   // this Signer. Should be used by sendTransaction but NOT by signTransaction.
   // By default called from: (overriding these prevents it)
   //   - sendTransaction
-  async populateTransaction(transaction: Deferrable<TransactionRequest>): Promise<TransactionRequest> {
-
-    const tx: Deferrable<TransactionRequest> = await resolveProperties(this.checkTransaction(transaction));
+  async populateTransaction(
+    transaction: Deferrable<TransactionRequest>
+  ): Promise<TransactionRequest> {
+    const tx: Deferrable<TransactionRequest> = await resolveProperties(
+      this.checkTransaction(transaction)
+    );
     if (tx.gas_unit_price === undefined) {
       tx.gas_unit_price = this.getGasPrice();
     }
@@ -172,10 +198,14 @@ export abstract class Signer {
     } else {
       tx.chain_id = Promise.all([
         Promise.resolve(tx.chain_id),
-        this.getChainId()
+        this.getChainId(),
       ]).then((results) => {
         if (results[1] !== 0 && results[0] !== results[1]) {
-          logger.throwArgumentError('chainId address mismatch', 'transaction', transaction);
+          logger.throwArgumentError(
+            'chainId address mismatch',
+            'transaction',
+            transaction
+          );
         }
         return results[0];
       });
@@ -186,33 +216,62 @@ export abstract class Signer {
         if (forwardErrors.has(error.code)) {
           throw error;
         }
-        console.log(`err: ${ error }`);
-        return logger.throwError('cannot estimate gas; transaction may fail or may require manual gas limit', Logger.errors.UNPREDICTABLE_GAS_LIMIT, {
-          error,
-          tx
-        });
+        console.log(`err: ${error}`);
+        return logger.throwError(
+          'cannot estimate gas; transaction may fail or may require manual gas limit',
+          Logger.errors.UNPREDICTABLE_GAS_LIMIT,
+          {
+            error,
+            tx,
+          }
+        );
       });
     }
 
     return resolveProperties(tx);
   }
 
-
   // Sub-classes SHOULD leave these alone
 
   // eslint-disable-next-line no-underscore-dangle
   checkProvider(operation?: string): void {
     if (!this.provider) {
-      logger.throwError('missing provider', Logger.errors.UNSUPPORTED_OPERATION, {
-        operation: (operation || '_checkProvider')
-      });
+      logger.throwError(
+        'missing provider',
+        Logger.errors.UNSUPPORTED_OPERATION,
+        {
+          operation: operation || '_checkProvider',
+        }
+      );
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  _checkProvider(operation?: string): void {
+    if (!this.provider) {
+      logger.throwError(
+        'missing provider',
+        Logger.errors.UNSUPPORTED_OPERATION,
+        {
+          operation: operation || '_checkProvider',
+        }
+      );
+    }
+  }
+
   static isSigner(value: any): value is Signer {
-    // eslint-disable-next-line no-underscore-dangle
     return !!(value && value._isSigner);
+  }
+
+  static isConnectableSigner(value: any): value is ConnectableSigner {
+    return !!(value && value.connect);
+  }
+
+  static isWallet(value: any): value is Wallet {
+    return !!(value && value._isWallet);
+  }
+
+  static isVoidSigner(value: any): value is VoidSigner {
+    return !!(value && value._isVoidSigner);
   }
 }
 
@@ -234,7 +293,9 @@ export class VoidSigner extends Signer {
   private fail(message: string, operation: string): Promise<any> {
     // eslint-disable-next-line promise/always-return
     return Promise.resolve().then(() => {
-      logger.throwError(message, Logger.errors.UNSUPPORTED_OPERATION, { operation });
+      logger.throwError(message, Logger.errors.UNSUPPORTED_OPERATION, {
+        operation,
+      });
     });
   }
 
@@ -244,12 +305,33 @@ export class VoidSigner extends Signer {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  signTransaction(transaction: Deferrable<TransactionRequest>): Promise<string> {
+  signTransaction(
+    transaction: Deferrable<TransactionRequest>
+  ): Promise<string> {
     return this.fail('VoidSigner cannot sign transactions', 'signTransaction');
   }
 
   connect(provider: Provider): VoidSigner {
     return new VoidSigner(this.address, provider);
   }
-}
 
+  sendTransaction(
+    transaction: Deferrable<TransactionRequest>
+  ): Promise<TransactionResponse> {
+    return this.fail('VoidSigner cannot send transactions', 'sendTransaction');
+  }
+
+  sign(transaction: Deferrable<TransactionRequest>): Promise<string> {
+    return this.fail('VoidSigner cannot sign transactions', 'sign');
+  }
+
+  send(
+    transaction: Deferrable<TransactionRequest>
+  ): Promise<TransactionResponse> {
+    return this.fail('VoidSigner cannot send transactions', 'send');
+  }
+
+  unlock(password: string): Promise<boolean> {
+    return this.fail('VoidSigner cannot unlock accounts', 'unlock');
+  }
+}

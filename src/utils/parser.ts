@@ -3,11 +3,11 @@ import decimal from 'is-decimal';
 import alphanumerical from 'is-alphanumerical';
 import alphabetical from 'is-alphabetical';
 import whitespace from 'is-whitespace-character';
-import {  TypeTag } from '../types';
+import { TypeTag } from '../types';
 import { fromHexString } from './hex';
 
 type Token =
-  'U8Type'
+  | 'U8Type'
   | 'U64Type'
   | 'U128Type'
   | 'BoolType'
@@ -27,7 +27,6 @@ type Token =
   | 'Gt'
   | 'Comma'
   | 'EOF';
-
 
 class Parser {
   readonly toks: Token[];
@@ -56,7 +55,11 @@ class Parser {
     }
   }
 
-  parse_comma_list<R>(parse_list_item: (x: Parser) => R, end_token: Token, allow_trailing_comma: boolean): R[] {
+  parse_comma_list<R>(
+    parse_list_item: (x: Parser) => R,
+    end_token: Token,
+    allow_trailing_comma: boolean
+  ): R[] {
     let v = [];
     const head = this.peek();
     if (!(head === end_token)) {
@@ -119,7 +122,7 @@ class Parser {
       let tyArgs = [];
       if (this.peek() === 'Lt') {
         this.consume_tok('Lt');
-        tyArgs = this.parse_comma_list(p => p.parseTypeTag(), 'Gt', true);
+        tyArgs = this.parse_comma_list((p) => p.parseTypeTag(), 'Gt', true);
         this.consume_tok('Gt');
       }
 
@@ -128,8 +131,8 @@ class Parser {
           address: addr,
           module: module,
           name: struct_name,
-          type_params: tyArgs
-        }
+          type_params: tyArgs,
+        },
       };
     }
 
@@ -186,7 +189,8 @@ function nextNumber(s: string): [Token, number] {
     // parse number
     if (decimal(c)) {
       num = num.concat(c);
-    } else if (alphabetical(c)) { // if come across a char, parse as suffix.
+    } else if (alphabetical(c)) {
+      // if come across a char, parse as suffix.
       let suffix = c;
       while (i < s.length) {
         let c = s[i++];
@@ -318,12 +322,11 @@ function nextToken(s: string): [Token, number] | undefined {
     return [{ Bytes: r }, r.length + 3];
   }
 
-
   // parse name token.
-  if (alphabetical(head) || ['-','_'].includes(head)) {
+  if (alphabetical(head) || ['-', '_'].includes(head)) {
     let r = '';
     for (let i = 0; i < s.length; i++) {
-      if (alphanumerical(s[i]) || ['-','_'].includes(s[i])) {
+      if (alphanumerical(s[i]) || ['-', '_'].includes(s[i])) {
         r = r.concat(s[i]);
       } else {
         break;
@@ -363,19 +366,16 @@ function tokenize(s: string): Token[] {
   return v;
 }
 
-
-
-
 function isAscii(character): boolean {
-  var code = typeof character === 'string' ? character.charCodeAt(0) : character;
+  var code =
+    typeof character === 'string' ? character.charCodeAt(0) : character;
 
-  return code <= 0x7F;
+  return code <= 0x7f;
 }
-
 
 function parse<T>(s: string, f: (p: Parser) => T): T {
   // @ts-ignore
-  let toks = tokenize(s).filter(t => t.WhiteSpace === undefined);
+  let toks = tokenize(s).filter((t) => t.WhiteSpace === undefined);
   toks.push('EOF');
   let parser = new Parser(toks);
   let res = f(parser);
@@ -384,12 +384,12 @@ function parse<T>(s: string, f: (p: Parser) => T): T {
 }
 
 export function parseTypeTags(s: string): TypeTag[] {
-  return parse(s, p => {
-    return p.parse_comma_list(p => p.parseTypeTag(), 'EOF', true);
+  return parse(s, (p) => {
+    return p.parse_comma_list((p) => p.parseTypeTag(), 'EOF', true);
   });
 }
 export function parseTypeTag(s: string): TypeTag {
-  return parse(s, p => p.parseTypeTag());
+  return parse(s, (p) => p.parseTypeTag());
 }
 
 // export fuction parseTransactionArguments(s: string): TransactionArgument[] {

@@ -5,9 +5,22 @@ import { arrayify, hexlify, isHexString } from '@ethersproject/bytes';
 import { bytes, Seq, uint8 } from '../lib/runtime/serde';
 import * as starcoin_types from '../lib/runtime/starcoin_types';
 import { BcsSerializer } from '../lib/runtime/bcs';
-import { FunctionId, HexString, parseFunctionId, TypeTag, U128, U64, U8 } from '../types';
-import { addressToSCS, addressFromSCS, typeTagToSCS, bcsEncode } from '../encoding';
-import { createRawUserTransactionHasher } from "../crypto_hash";
+import {
+  FunctionId,
+  HexString,
+  parseFunctionId,
+  TypeTag,
+  U128,
+  U64,
+  U8,
+} from '../types';
+import {
+  addressToSCS,
+  addressFromSCS,
+  typeTagToSCS,
+  bcsEncode,
+} from '../encoding';
+import { createRawUserTransactionHasher } from '../crypto_hash';
 // import { MultiEd25519KeyShard } from "../crypto";
 import { JsonRpcProvider } from '../providers/jsonrpc-provider';
 import { fromHexString } from './hex';
@@ -32,7 +45,10 @@ export function encodeStarcoinTypesScriptFunction(
 ): starcoin_types.ScriptFunction {
   const funcId = parseFunctionId(functionId);
   const scriptFunction = new starcoin_types.ScriptFunction(
-    new starcoin_types.ModuleId(addressToSCS(funcId.address), new starcoin_types.Identifier(funcId.module)),
+    new starcoin_types.ModuleId(
+      addressToSCS(funcId.address),
+      new starcoin_types.Identifier(funcId.module)
+    ),
     new starcoin_types.Identifier(funcId.functionName),
     tyArgs.map((t) => typeTagToSCS(t)),
     args
@@ -45,34 +61,58 @@ export function encodeScriptFunction(
   tyArgs: TypeTag[],
   args: bytes[]
 ): starcoin_types.TransactionPayloadVariantScriptFunction {
-  const scriptFunction = encodeStarcoinTypesScriptFunction(functionId, tyArgs, args)
-  return new starcoin_types.TransactionPayloadVariantScriptFunction(scriptFunction);
+  const scriptFunction = encodeStarcoinTypesScriptFunction(
+    functionId,
+    tyArgs,
+    args
+  );
+  return new starcoin_types.TransactionPayloadVariantScriptFunction(
+    scriptFunction
+  );
 }
 
 export function encodeStarcoinTypesPackage(
   moduleAddress: string,
   moduleCodes: HexString[],
-  initScriptFunction?: { functionId: FunctionId; tyArgs: TypeTag[]; args: bytes[] }
+  initScriptFunction?: {
+    functionId: FunctionId;
+    tyArgs: TypeTag[];
+    args: bytes[];
+  }
 ): starcoin_types.Package {
-  const modules = moduleCodes.map((m) => new starcoin_types.Module(arrayify(m)));
+  const modules = moduleCodes.map(
+    (m) => new starcoin_types.Module(arrayify(m))
+  );
   let scriptFunction = null;
   if (!!initScriptFunction) {
-    scriptFunction = encodeStarcoinTypesScriptFunction(initScriptFunction.functionId, initScriptFunction.tyArgs, initScriptFunction.args);
+    scriptFunction = encodeStarcoinTypesScriptFunction(
+      initScriptFunction.functionId,
+      initScriptFunction.tyArgs,
+      initScriptFunction.args
+    );
   }
   const packageData = new starcoin_types.Package(
     addressToSCS(moduleAddress),
     modules,
     scriptFunction
   );
-  return packageData
+  return packageData;
 }
 
 export function encodePackage(
   moduleAddress: string,
   moduleCodes: HexString[],
-  initScriptFunction?: { functionId: FunctionId; tyArgs: TypeTag[]; args: bytes[] }
+  initScriptFunction?: {
+    functionId: FunctionId;
+    tyArgs: TypeTag[];
+    args: bytes[];
+  }
 ): starcoin_types.TransactionPayloadVariantPackage {
-  const packageData = encodeStarcoinTypesPackage(moduleAddress, moduleCodes, initScriptFunction)
+  const packageData = encodeStarcoinTypesPackage(
+    moduleAddress,
+    moduleCodes,
+    initScriptFunction
+  );
   return new starcoin_types.TransactionPayloadVariantPackage(packageData);
 }
 
@@ -86,27 +126,34 @@ export function generateRawUserTransaction(
   expirationTimestampSecs: U64,
   chainId: U8
 ): starcoin_types.RawUserTransaction {
-
   // Step 1-2: generate RawUserTransaction
-  const sender = addressToSCS(senderAddress)
-  const sequence_number = BigInt(senderSequenceNumber)
+  const sender = addressToSCS(senderAddress);
+  const sequence_number = BigInt(senderSequenceNumber);
 
-  const max_gas_amount = BigInt(maxGasAmount)
-  const gas_unit_price = BigInt(gasUnitPrice)
-  const gas_token_code = '0x1::STC::STC'
-  const expiration_timestamp_secs = BigInt(expirationTimestampSecs)
-  const chain_id = new starcoin_types.ChainId(chainId)
+  const max_gas_amount = BigInt(maxGasAmount);
+  const gas_unit_price = BigInt(gasUnitPrice);
+  const gas_token_code = '0x1::STC::STC';
+  const expiration_timestamp_secs = BigInt(expirationTimestampSecs);
+  const chain_id = new starcoin_types.ChainId(chainId);
 
-  const rawUserTransaction = new starcoin_types.RawUserTransaction(sender, sequence_number, payload, max_gas_amount, gas_unit_price, gas_token_code, expiration_timestamp_secs, chain_id)
+  const rawUserTransaction = new starcoin_types.RawUserTransaction(
+    sender,
+    sequence_number,
+    payload,
+    max_gas_amount,
+    gas_unit_price,
+    gas_token_code,
+    expiration_timestamp_secs,
+    chain_id
+  );
 
-  return rawUserTransaction
+  return rawUserTransaction;
 }
 
 export async function getSignatureHex(
   rawUserTransaction: starcoin_types.RawUserTransaction,
-  senderPrivateKey: HexString,
+  senderPrivateKey: HexString
 ): Promise<string> {
-
   const hasher = createRawUserTransactionHasher();
   const hashSeedBytes = hasher.get_salt();
 
@@ -123,10 +170,13 @@ export async function getSignatureHex(
     return tmp;
   })(hashSeedBytes, rawUserTransactionBytes);
 
-  const signatureBytes = await ed.sign(msgBytes, stripHexPrefix(senderPrivateKey))
-  const signatureHex = hexlify(signatureBytes)
+  const signatureBytes = await ed.sign(
+    msgBytes,
+    stripHexPrefix(senderPrivateKey)
+  );
+  const signatureHex = hexlify(signatureBytes);
 
-  return signatureHex
+  return signatureHex;
 }
 
 async function generateSignedUserTransaction(
@@ -134,9 +184,15 @@ async function generateSignedUserTransaction(
   signatureHex: string,
   rawUserTransaction: starcoin_types.RawUserTransaction
 ): Promise<starcoin_types.SignedUserTransaction> {
-  const senderPublicKeyMissingPrefix = <string><unknown>await ed.getPublicKey(stripHexPrefix(senderPrivateKey))
-  const signedUserTransaction = signTxn(senderPublicKeyMissingPrefix, signatureHex, rawUserTransaction)
-  return Promise.resolve(signedUserTransaction)
+  const senderPublicKeyMissingPrefix = <string>(
+    (<unknown>await ed.getPublicKey(stripHexPrefix(senderPrivateKey)))
+  );
+  const signedUserTransaction = signTxn(
+    senderPublicKeyMissingPrefix,
+    signatureHex,
+    rawUserTransaction
+  );
+  return Promise.resolve(signedUserTransaction);
 }
 
 export function signTxn(
@@ -145,14 +201,24 @@ export function signTxn(
   rawUserTransaction: starcoin_types.RawUserTransaction
 ): starcoin_types.SignedUserTransaction {
   // Step 3-1: generate authenticator
-  const public_key = new starcoin_types.Ed25519PublicKey(arrayify(addHexPrefix(senderPublicKey)))
-  const signature = new starcoin_types.Ed25519Signature(arrayify(addHexPrefix(signatureHex)))
-  const transactionAuthenticatorVariantEd25519 = new starcoin_types.TransactionAuthenticatorVariantEd25519(public_key, signature)
+  const public_key = new starcoin_types.Ed25519PublicKey(
+    arrayify(addHexPrefix(senderPublicKey))
+  );
+  const signature = new starcoin_types.Ed25519Signature(
+    arrayify(addHexPrefix(signatureHex))
+  );
+  const transactionAuthenticatorVariantEd25519 = new starcoin_types.TransactionAuthenticatorVariantEd25519(
+    public_key,
+    signature
+  );
 
   // Step 3-2: generate SignedUserTransaction
-  const signedUserTransaction = new starcoin_types.SignedUserTransaction(rawUserTransaction, transactionAuthenticatorVariantEd25519)
+  const signedUserTransaction = new starcoin_types.SignedUserTransaction(
+    rawUserTransaction,
+    transactionAuthenticatorVariantEd25519
+  );
 
-  return signedUserTransaction
+  return signedUserTransaction;
 }
 
 // export function signTransaction(
@@ -180,32 +246,38 @@ export async function getSignedUserTransaction(
   senderPrivateKey: HexString,
   rawUserTransaction: starcoin_types.RawUserTransaction
 ): Promise<starcoin_types.SignedUserTransaction> {
-
   // Step 2: generate signature of RawUserTransaction
-  const signatureHex = await getSignatureHex(rawUserTransaction, senderPrivateKey)
+  const signatureHex = await getSignatureHex(
+    rawUserTransaction,
+    senderPrivateKey
+  );
 
   // Step 3: generate SignedUserTransaction
-  const signedUserTransaction = await generateSignedUserTransaction(senderPrivateKey, signatureHex, rawUserTransaction)
+  const signedUserTransaction = await generateSignedUserTransaction(
+    senderPrivateKey,
+    signatureHex,
+    rawUserTransaction
+  );
 
-  return signedUserTransaction
+  return signedUserTransaction;
 }
 
 export async function signRawUserTransaction(
   senderPrivateKey: HexString,
   rawUserTransaction: starcoin_types.RawUserTransaction
 ): Promise<string> {
-
-  const signedUserTransaction = await getSignedUserTransaction(senderPrivateKey, rawUserTransaction)
+  const signedUserTransaction = await getSignedUserTransaction(
+    senderPrivateKey,
+    rawUserTransaction
+  );
 
   // Step 4: get SignedUserTransaction Hex
-  const hex = getSignedUserTransactionHex(signedUserTransaction)
+  const hex = getSignedUserTransactionHex(signedUserTransaction);
 
-  return hex
+  return hex;
 }
 
-function encodeStructTypeTag(
-  str: string
-): TypeTag {
+function encodeStructTypeTag(str: string): TypeTag {
   const arr = str.split('<');
   const arr1 = arr[0].split('::');
   const address = arr1[0];
@@ -228,8 +300,8 @@ function encodeStructTypeTag(
       name,
       type_params,
     },
-  }
-  return result
+  };
+  return result;
 }
 
 /**
@@ -260,22 +332,21 @@ into a TypeTag array:
   }
 ]
  */
-export function encodeStructTypeTags(
-  typeArgsString: string[]
-): TypeTag[] {
-  return typeArgsString.map((str) => encodeStructTypeTag(str))
+export function encodeStructTypeTags(typeArgsString: string[]): TypeTag[] {
+  return typeArgsString.map((str) => encodeStructTypeTag(str));
 }
 
-function serializeWithType(
-  value: any,
-  type: any
-): bytes {
+function serializeWithType(value: any, type: any): bytes {
   if (type === 'Address') return arrayify(value);
 
   const se = new BcsSerializer();
 
   if (type && type.Vector === 'U8') {
-    const valueBytes = value ? (isHexString(addHexPrefix(value)) ? fromHexString(value) : new Uint8Array(Buffer.from(value))) : new Uint8Array()
+    const valueBytes = value
+      ? isHexString(addHexPrefix(value))
+        ? fromHexString(value)
+        : new Uint8Array(Buffer.from(value))
+      : new Uint8Array();
     const { length } = valueBytes;
     const list: Seq<uint8> = [];
     for (let i = 0; i < length; i++) {
@@ -291,13 +362,13 @@ function serializeWithType(
     value.forEach((sub) => {
       // array of string: vector<vector<u8>>
       if (type.Vector.Vector === 'U8') {
-        se.serializeBytes(fromHexString(sub))
+        se.serializeBytes(fromHexString(sub));
       } else if (type.Vector === 'Address') {
-        const accountAddress = addressToSCS(sub)
-        accountAddress.serialize(se)
+        const accountAddress = addressToSCS(sub);
+        accountAddress.serialize(se);
       } else if (type.Vector) {
         // array of other types: vector<u8>
-        se[`serialize${ type.Vector }`](sub);
+        se[`serialize${type.Vector}`](sub);
       }
     });
     const hex = hexlify(se.getBytes());
@@ -306,7 +377,7 @@ function serializeWithType(
 
   // For normal data type
   if (type) {
-    se[`serialize${ type }`](value);
+    se[`serialize${type}`](value);
     const hex = hexlify(se.getBytes());
     return arrayify(hex);
   }
@@ -318,21 +389,23 @@ export function encodeScriptFunctionArgs(
   argsType: any[],
   args: any[]
 ): bytes[] {
-  return args.map((value, index) => serializeWithType(value, argsType[index].type_tag))
+  return args.map((value, index) =>
+    serializeWithType(value, argsType[index].type_tag)
+  );
 }
 
 export async function encodeScriptFunctionByResolve(
   functionId: FunctionId,
   typeArgs: string[],
   args: any[],
-  nodeUrl: string): Promise<starcoin_types.TransactionPayloadVariantScriptFunction> {
-  const tyArgs = encodeStructTypeTags(typeArgs)
+  nodeUrl: string
+): Promise<starcoin_types.TransactionPayloadVariantScriptFunction> {
+  const tyArgs = encodeStructTypeTags(typeArgs);
 
   const provider = new JsonRpcProvider(nodeUrl);
-  const { args: argsType } = await provider.send(
-    'contract.resolve_function',
-    [functionId]
-  );
+  const { args: argsType } = await provider.send('contract.resolve_function', [
+    functionId,
+  ]);
   // Remove the first Signer type
   if (argsType[0] && argsType[0].type_tag === 'Signer') {
     argsType.shift();
